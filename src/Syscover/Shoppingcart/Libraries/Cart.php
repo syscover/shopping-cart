@@ -1,8 +1,5 @@
 <?php namespace Syscover\Shoppingcart\Libraries;
 
-use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Support\Collection;
-use Syscover\Shoppingcart\Exceptions\ShoppingcartInstanceException;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartUnknownModelException;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidItemException;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidPriceException;
@@ -19,6 +16,13 @@ class Cart {
 	protected $instance;
 
 	/**
+	 * cart collection instance
+	 *
+	 * @var \Syscover\Shoppingcart\Libraries\CartCollection
+	 */
+	protected $cartCollection;
+
+	/**
 	 * The Eloquent model a cart is associated with
 	 *
 	 * @var string
@@ -33,55 +37,50 @@ class Cart {
 	protected $associatedModelNamespace;
 
 	/**
-	 * content to rows of cart
-	 *
-	 * @var string
+	 * Cart constructor.
+	 * @param string $instance
 	 */
-	//protected $cartCollection;
+	public function __construct($instance)
+	{
+		$this->instance 		= $instance;
+		$this->cartCollection 	= new CartCollection;
+	}
+
 
 	/**
-	 * Constructor
+	 * Get the CarCollection
 	 *
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
-	public function __construct()
+	private function setCart()
 	{
-		$this->instance = 'main';
+		session()->put($this->instance, $this);
 	}
 
 	/**
-	 * Set the current cart instance
+	 * Get the CarCollection
 	 *
-	 * @param  string  $instance  Cart instance name
-	 * @return Syscover\Shoppingcart\Libraries\Cart
-	 * @throws ShoppingcartInstanceException
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
-	public function instance($instance = null)
+	protected function getCartCollection()
 	{
-		if(empty($instance)) throw new ShoppingcartInstanceException;
-
-		$this->instance = $instance;
-
-		// Return self so the method is chainable
-		return $this;
+		return $this->cartCollection;
 	}
 
 	/**
-	 * Set the associated model
+	 * Update the CarCollection
 	 *
-	 * @param  string    $modelName        The name of the model
-	 * @param  string    $modelNamespace   The namespace of the model
-	 * @return Syscover\Shoppingcart\Libraries\Cart
-	 * @throws ShoppingcartUnknownModelException
+	 * @param  Syscover\Shoppingcart\Libraries\CartCollection  $cart  The new cart content
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
-	public function associate($modelName, $modelNamespace = null)
+	protected function setCartCollection($cartCollection)
 	{
-		$this->associatedModel 			= $modelName;
-		$this->associatedModelNamespace = $modelNamespace;
+		$this->cartCollection = $cartCollection;
 
-		if( ! class_exists($modelNamespace . '\\' . $modelName)) throw new ShoppingcartUnknownModelException;
+		// save current changes
+		$this->setCart();
 
-		// Return self so the method is chainable
-		return $this;
+		return $this->getCartCollection();
 	}
 
 	/**
@@ -91,7 +90,11 @@ class Cart {
 	 * @param string 	    $name     Name of the item
 	 * @param int    	    $qty      Item qty to add to the cart
 	 * @param float  	    $price    Price of one item
-	 * @param array  	    $options  Array of additional options, such as 'size' or 'color'
+	 * @param array  	    $options  Array of additional options, such as 'size' or 'color
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection|void
+	 * @throws ShoppingcartInvalidItemException
+	 * @throws ShoppingcartInvalidPriceException
+	 * @throws ShoppingcartInvalidQtyException'
 	 */
 	public function add($id, $name = null, $qty = null, $price = null, array $options = [])
 	{
@@ -142,6 +145,57 @@ class Cart {
 	}
 
 	/**
+	 * Add row to the cart
+	 *
+	 * @param string  $id       Unique ID of the item
+	 * @param string  $name     Name of the item
+	 * @param int     $qty      Item qty to add to the cart
+	 * @param float   $price    Price of one item
+	 * @param array   $options  Array of additional options, such as 'size' or 'color'
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @throws ShoppingcartInvalidItemException
+	 * @throws ShoppingcartInvalidPriceException
+	 * @throws ShoppingcartInvalidQtyException
+	 */
+	protected function addRow($id, $name, $qty, $price, array $options = [])
+	{
+		if(empty($id) || empty($name) || empty($qty) || ! isset($price))
+		{
+			throw new ShoppingcartInvalidItemException;
+		}
+
+		if( ! is_numeric($qty))
+		{
+			throw new ShoppingcartInvalidQtyException;
+		}
+
+		if( ! is_numeric($price))
+		{
+			throw new ShoppingcartInvalidPriceException;
+		}
+
+		$cartCollection 	= $this->getCartCollection();
+
+		$rowId 				= $this->generateRowId($id, $options);
+
+		if($cartCollection->has($rowId))
+		{
+			$row 			= $cartCollection->get($rowId);
+			$cartCollection = $this->updateRow($rowId, ['qty' => $row->qty + $qty]);
+		}
+		else
+		{
+			$cartCollection = $this->createRow($rowId, $id, $name, $qty, $price, $options);
+		}
+
+		return $this->setCartCollection($cartCollection);
+	}
+
+
+
+
+
+	/**
 	 * Update the quantity of one row of the cart
 	 *
 	 * @param  string         $rowId       The rowid of the item you want to update
@@ -179,23 +233,24 @@ class Cart {
 
 	/**
 	 * @param $rowId
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 * @throws ShoppingcartInvalidRowIDException
 	 */
 	public function remove($rowId)
 	{
 		if( ! $this->hasRowId($rowId)) throw new ShoppingcartInvalidRowIDException;
 
-		$cart = $this->getContent();
+		$cartCollection = $this->getCartCollection();
 
 		// Fire the cart.remove event
 		event('cart.remove', $rowId);
 
-		$cart->forget($rowId);
+		$cartCollection->forget($rowId);
 
 		// Fire the cart.removed event
 		event('cart.removed', $rowId);
 
-		return $this->updateCart($cart);
+		return $this->setCartCollection($cartCollection);
 	}
 
 	/**
@@ -206,9 +261,9 @@ class Cart {
 	 */
 	public function get($rowId)
 	{
-		$cart = $this->getContent();
+		$cartCollection = $this->getCartCollection();
 
-		return ($cart->has($rowId)) ? $cart->get($rowId) : NULL;
+		return ($cartCollection->has($rowId)) ? $cartCollection->get($rowId) : null;
 	}
 
 	/**
@@ -218,27 +273,9 @@ class Cart {
 	 */
 	public function content()
 	{
-		$cart = $this->getContent();
+		$cartCollection = $this->getCartCollection();
 
-		return (empty($cart)) ? NULL : $cart;
-	}
-
-	/**
-	 * Empty the cart
-	 *
-	 * @return boolean
-	 */
-	public function destroy()
-	{
-		// Fire the cart.destroy event
-		event('cart.destroy');
-
-		$result = session()->put($this->getInstance(), null);
-
-		// Fire the cart.destroyed event
-		event('cart.destroyed');
-
-		return $result;
+		return (empty($cartCollection)) ? null : $cartCollection;
 	}
 
 	/**
@@ -248,15 +285,15 @@ class Cart {
 	 */
 	public function total()
 	{
-		$total = 0;
-		$cart = $this->getContent();
+		$total 			= 0;
+		$cartCollection = $this->getCartCollection();
 
-		if(empty($cart))
+		if(empty($cartCollection))
 		{
 			return $total;
 		}
 
-		foreach($cart AS $row)
+		foreach($cartCollection as $row)
 		{
 			$total += $row->subtotal;
 		}
@@ -272,16 +309,16 @@ class Cart {
 	 */
 	public function count($totalItems = true)
 	{
-		$cart = $this->getContent();
+		$cartCollection = $this->getCartCollection();
 
 		if( ! $totalItems)
 		{
-			return $cart->count();
+			return $cartCollection->count();
 		}
 
 		$count = 0;
 
-		foreach($cart AS $row)
+		foreach($cartCollection as $row)
 		{
 			$count += $row->qty;
 		}
@@ -299,7 +336,7 @@ class Cart {
 	{
 		if(empty($search)) return false;
 
-		foreach($this->getContent() as $item)
+		foreach($this->getCartCollection() as $item)
 		{
 			$found = $item->search($search);
 
@@ -310,52 +347,6 @@ class Cart {
 		}
 
 		return (empty($rows)) ? false : $rows;
-	}
-
-	/**
-	 * Add row to the cart
-	 *
-	 * @param string  $id       Unique ID of the item
-	 * @param string  $name     Name of the item
-	 * @param int     $qty      Item qty to add to the cart
-	 * @param float   $price    Price of one item
-	 * @param array   $options  Array of additional options, such as 'size' or 'color'
-	 * @throws ShoppingcartInvalidItemException
-	 * @throws ShoppingcartInvalidPriceException
-	 * @throws ShoppingcartInvalidQtyException
-	 */
-	protected function addRow($id, $name, $qty, $price, array $options = [])
-	{
-		if(empty($id) || empty($name) || empty($qty) || ! isset($price))
-		{
-			throw new ShoppingcartInvalidItemException;
-		}
-
-		if( ! is_numeric($qty))
-		{
-			throw new ShoppingcartInvalidQtyException;
-		}
-
-		if( ! is_numeric($price))
-		{
-			throw new ShoppingcartInvalidPriceException;
-		}
-
-		$cart 	= $this->getContent();
-
-		$rowId 	= $this->generateRowId($id, $options);
-
-		if($cart->has($rowId))
-		{
-			$row 	= $cart->get($rowId);
-			$cart 	= $this->updateRow($rowId, ['qty' => $row->qty + $qty]);
-		}
-		else
-		{
-			$cart 	= $this->createRow($rowId, $id, $name, $qty, $price, $options);
-		}
-
-		return $this->updateCart($cart);
 	}
 
 	/**
@@ -380,47 +371,7 @@ class Cart {
 	 */
 	protected function hasRowId($rowId)
 	{
-		return $this->getContent()->has($rowId);
-	}
-
-	/**
-	 * Update the cart
-	 *
-	 * @param  Syscover\Shoppingcart\Libraries\CartCollection  $cart  The new cart content
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
-	 */
-	protected function updateCart($cart)
-	{
-		//return session()->put($this->getInstance(), $cart);
-
-		// set cartCollection
-		$obj = new CartWrapper();
-		$obj->hola = 'hola mundo '.$this->getInstance();
-		$obj->cartCollection = $cart;
-
-		return session()->put($this->getInstance(), $obj);
-	}
-
-	/**f
-	 * Get the carts content, if there is no cart content set yet, return a new empty Collection
-	 *
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
-	 */
-	protected function getContent()
-	{
-		$content = (session()->has($this->getInstance())) ? session()->get($this->getInstance())->cartCollection : new CartCollection;
-
-		return $content;
-	}
-
-	/**
-	 * Get the current cart instance
-	 *
-	 * @return string
-	 */
-	protected function getInstance()
-	{
-		return 'cart.' . $this->instance;
+		return $this->getCartCollection()->has($rowId);
 	}
 
 	/**
@@ -432,9 +383,9 @@ class Cart {
 	 */
 	protected function updateRow($rowId, $attributes)
 	{
-		$cart = $this->getContent();
+		$cartCollection = $this->getCartCollection();
 
-		$row = $cart->get($rowId);
+		$row = $cartCollection->get($rowId);
 
 		foreach($attributes as $key => $value)
 		{
@@ -454,9 +405,9 @@ class Cart {
 			$row->put('subtotal', $row->qty * $row->price);
 		}
 
-		$cart->put($rowId, $row);
+		$cartCollection->put($rowId, $row);
 
-		return $cart;
+		return $cartCollection;
 	}
 
 	/**
@@ -472,7 +423,7 @@ class Cart {
 	 */
 	protected function createRow($rowId, $id, $name, $qty, $price, $options)
 	{
-		$cart = $this->getContent();
+		$cartCollection = $this->getCartCollection();
 
 		$newRow = new CartRowCollection([
 			'rowid' 	=> $rowId,
@@ -489,9 +440,9 @@ class Cart {
 			'discount'	=> null,
 		], $this->associatedModel, $this->associatedModelNamespace);
 
-		$cart->put($rowId, $newRow);
+		$cartCollection->put($rowId, $newRow);
 
-		return $cart;
+		return $cartCollection;
 	}
 
 	/**
@@ -534,4 +485,22 @@ class Cart {
 		return is_array(head($array));
 	}
 
+	/**
+	 * Set the associated model
+	 *
+	 * @param  string    $modelName        The name of the model
+	 * @param  string    $modelNamespace   The namespace of the model
+	 * @return Syscover\Shoppingcart\Libraries\Cart
+	 * @throws ShoppingcartUnknownModelException
+	 */
+	public function associate($modelName, $modelNamespace = null)
+	{
+		$this->associatedModel 			= $modelName;
+		$this->associatedModelNamespace = $modelNamespace;
+
+		if( ! class_exists($modelNamespace . '\\' . $modelName)) throw new ShoppingcartUnknownModelException;
+
+		// Return self so the method is chainable
+		return $this;
+	}
 }

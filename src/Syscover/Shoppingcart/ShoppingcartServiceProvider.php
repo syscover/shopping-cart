@@ -1,7 +1,7 @@
 <?php namespace Syscover\Forms;
 
 use Illuminate\Support\ServiceProvider;
-use Syscover\Shoppingcart\Facades\Cart;
+use Syscover\Shoppingcart\Facades\CartProvider;
 
 class ShoppingcartServiceProvider extends ServiceProvider
 {
@@ -22,9 +22,9 @@ class ShoppingcartServiceProvider extends ServiceProvider
 	 */
 	public function register()
 	{
-		$this->app->bind('cart', function($app)
+		$this->app->bind('cartProvider', function($app)
 		{
-			return new Cart();
+			return new CartProvider();
 		});
 	}
 
