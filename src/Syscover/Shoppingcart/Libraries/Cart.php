@@ -4,15 +4,12 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Collection;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartInstanceException;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartUnknownModelException;
+use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidItemException;
+use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidPriceException;
+use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidRowIDException;
+use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidQtyException;
 
 class Cart {
-
-	/**
-	 * Session class instance
-	 *
-	 * @var Illuminate\Session\SessionManager
-	 */
-	protected $session;
 
 	/**
 	 * Current cart instance
@@ -36,13 +33,18 @@ class Cart {
 	protected $associatedModelNamespace;
 
 	/**
+	 * content to rows of cart
+	 *
+	 * @var string
+	 */
+	//protected $cartCollection;
+
+	/**
 	 * Constructor
 	 *
-	 * @param Illuminate\Session\SessionManager 	$session Session class instance
 	 */
-	public function __construct($session)
+	public function __construct()
 	{
-		$this->session 	= $session;
 		$this->instance = 'main';
 	}
 
@@ -73,7 +75,7 @@ class Cart {
 	 */
 	public function associate($modelName, $modelNamespace = null)
 	{
-		$this->associatedModel = $modelName;
+		$this->associatedModel 			= $modelName;
 		$this->associatedModelNamespace = $modelNamespace;
 
 		if( ! class_exists($modelNamespace . '\\' . $modelName)) throw new ShoppingcartUnknownModelException;
@@ -145,10 +147,11 @@ class Cart {
 	 * @param  string         $rowId       The rowid of the item you want to update
 	 * @param  integer|array  $attribute   New quantity of the item|Array of attributes to update
 	 * @return boolean
+	 * @throws ShoppingcartInvalidRowIDException
 	 */
 	public function update($rowId, $attribute)
 	{
-		if( ! $this->hasRowId($rowId)) throw new Exceptions\ShoppingcartInvalidRowIDException;
+		if( ! $this->hasRowId($rowId)) throw new ShoppingcartInvalidRowIDException;
 
 		if(is_array($attribute))
 		{
@@ -175,14 +178,12 @@ class Cart {
 	}
 
 	/**
-	 * Remove a row from the cart
-	 *
-	 * @param  string  $rowId  The rowid of the item
-	 * @return boolean
+	 * @param $rowId
+	 * @throws ShoppingcartInvalidRowIDException
 	 */
 	public function remove($rowId)
 	{
-		if( ! $this->hasRowId($rowId)) throw new Exceptions\ShoppingcartInvalidRowIDException;
+		if( ! $this->hasRowId($rowId)) throw new ShoppingcartInvalidRowIDException;
 
 		$cart = $this->getContent();
 
@@ -201,7 +202,7 @@ class Cart {
 	 * Get a row of the cart by its ID
 	 *
 	 * @param  string  $rowId  The ID of the row to fetch
-	 * @return Syscover\Shoppingcart\CartCollection
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	public function get($rowId)
 	{
@@ -213,7 +214,7 @@ class Cart {
 	/**
 	 * Get the cart content
 	 *
-	 * @return Syscover\Shoppingcart\CartRowCollection
+	 * @return Syscover\Shoppingcart\Libraries\CartRowCollection
 	 */
 	public function content()
 	{
@@ -232,7 +233,7 @@ class Cart {
 		// Fire the cart.destroy event
 		event('cart.destroy');
 
-		$result = $this->updateCart(NULL);
+		$result = session()->put($this->getInstance(), null);
 
 		// Fire the cart.destroyed event
 		event('cart.destroyed');
@@ -319,36 +320,39 @@ class Cart {
 	 * @param int     $qty      Item qty to add to the cart
 	 * @param float   $price    Price of one item
 	 * @param array   $options  Array of additional options, such as 'size' or 'color'
+	 * @throws ShoppingcartInvalidItemException
+	 * @throws ShoppingcartInvalidPriceException
+	 * @throws ShoppingcartInvalidQtyException
 	 */
 	protected function addRow($id, $name, $qty, $price, array $options = [])
 	{
 		if(empty($id) || empty($name) || empty($qty) || ! isset($price))
 		{
-			throw new Exceptions\ShoppingcartInvalidItemException;
+			throw new ShoppingcartInvalidItemException;
 		}
 
 		if( ! is_numeric($qty))
 		{
-			throw new Exceptions\ShoppingcartInvalidQtyException;
+			throw new ShoppingcartInvalidQtyException;
 		}
 
 		if( ! is_numeric($price))
 		{
-			throw new Exceptions\ShoppingcartInvalidPriceException;
+			throw new ShoppingcartInvalidPriceException;
 		}
 
-		$cart = $this->getContent();
+		$cart 	= $this->getContent();
 
-		$rowId = $this->generateRowId($id, $options);
+		$rowId 	= $this->generateRowId($id, $options);
 
 		if($cart->has($rowId))
 		{
-			$row = $cart->get($rowId);
-			$cart = $this->updateRow($rowId, ['qty' => $row->qty + $qty]);
+			$row 	= $cart->get($rowId);
+			$cart 	= $this->updateRow($rowId, ['qty' => $row->qty + $qty]);
 		}
 		else
 		{
-			$cart = $this->createRow($rowId, $id, $name, $qty, $price, $options);
+			$cart 	= $this->createRow($rowId, $id, $name, $qty, $price, $options);
 		}
 
 		return $this->updateCart($cart);
@@ -371,7 +375,7 @@ class Cart {
 	/**
 	 * Check if a rowid exists in the current cart instance
 	 *
-	 * @param  string  $id  Unique ID of the item
+	 * @param  string  $rowId  Unique ID of the item
 	 * @return boolean
 	 */
 	protected function hasRowId($rowId)
@@ -382,22 +386,29 @@ class Cart {
 	/**
 	 * Update the cart
 	 *
-	 * @param  Syscover\Shoppingcart\CartCollection  $cart  The new cart content
-	 * @return void
+	 * @param  Syscover\Shoppingcart\Libraries\CartCollection  $cart  The new cart content
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function updateCart($cart)
 	{
-		return session()->put($this->getInstance(), $cart);
+		//return session()->put($this->getInstance(), $cart);
+
+		// set cartCollection
+		$obj = new CartWrapper();
+		$obj->hola = 'hola mundo '.$this->getInstance();
+		$obj->cartCollection = $cart;
+
+		return session()->put($this->getInstance(), $obj);
 	}
 
-	/**
+	/**f
 	 * Get the carts content, if there is no cart content set yet, return a new empty Collection
 	 *
-	 * @return Syscover\Shoppingcart\CartCollection
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function getContent()
 	{
-		$content = (session()->has($this->getInstance())) ? $this->session->get($this->getInstance()) : new CartCollection;
+		$content = (session()->has($this->getInstance())) ? session()->get($this->getInstance())->cartCollection : new CartCollection;
 
 		return $content;
 	}
@@ -416,8 +427,8 @@ class Cart {
 	 * Update a row if the rowId already exists
 	 *
 	 * @param  string   $rowId  The ID of the row to update
-	 * @param  integer  $qty    The quantity to add to the row
-	 * @return Syscover\Shoppingcart\CartCollection
+	 * @param  array  	$attributes    The quantity and price to add to the row
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function updateRow($rowId, $attributes)
 	{
@@ -457,20 +468,25 @@ class Cart {
 	 * @param  int     $qty      Item qty to add to the cart
 	 * @param  float   $price    Price of one item
 	 * @param  array   $options  Array of additional options, such as 'size' or 'color'
-	 * @return Syscover\Shoppingcart\CartCollection
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function createRow($rowId, $id, $name, $qty, $price, $options)
 	{
 		$cart = $this->getContent();
 
 		$newRow = new CartRowCollection([
-			'rowid' => $rowId,
-			'id' => $id,
-			'name' => $name,
-			'qty' => $qty,
-			'price' => $price,
-			'options' => new CartRowOptionsCollection($options),
-			'subtotal' => $qty * $price
+			'rowid' 	=> $rowId,
+			'id' 		=> $id,
+			'name' 		=> $name,
+			'qty' 		=> $qty,
+			'price' 	=> $price,
+			'options' 	=> new CartRowOptionsCollection($options),
+			'subtotal' 	=> $qty * $price,
+
+			// para implementar
+			'tax'		=> null,
+			'total'		=> null,
+			'discount'	=> null,
 		], $this->associatedModel, $this->associatedModelNamespace);
 
 		$cart->put($rowId, $newRow);
@@ -483,7 +499,7 @@ class Cart {
 	 *
 	 * @param  string  $rowId  The ID of the row
 	 * @param  int     $qty    The qty to add
-	 * @return Syscover\Shoppingcart\CartCollection
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function updateQty($rowId, $qty)
 	{
@@ -500,7 +516,7 @@ class Cart {
 	 *
 	 * @param  string  $rowId       The ID of the row
 	 * @param  array   $attributes  An array of attributes to update
-	 * @return Syscover\Shoppingcart\CartCollection
+	 * @return Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function updateAttribute($rowId, $attributes)
 	{

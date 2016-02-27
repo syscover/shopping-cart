@@ -24,7 +24,7 @@ class ShoppingcartServiceProvider extends ServiceProvider
 	{
 		$this->app->bind('cart', function($app)
 		{
-			return new Cart($app['session']);
+			return new Cart();
 		});
 	}
 
