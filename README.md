@@ -183,6 +183,12 @@ CartProvider::instance()->count()
   CartProvider::instance()->search(array('id' => 1, 'options' => array('size' => 'L'))); // Returns an array of rowid(s) of found item(s) or false on failure
 
 
+
+CartProvider::instance()->hasShippinh();
+CartProvider::instance()->getShippinh();
+CartProvider::instance()->setShippinh();
+
+
 Instances
 
 Now the packages also supports multiple instances of the cart. The way this works is like this:

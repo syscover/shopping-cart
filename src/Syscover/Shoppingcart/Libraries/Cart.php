@@ -5,6 +5,7 @@ use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidItemException;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidPriceException;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidRowIDException;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidQtyException;
+use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidDataTypeException;
 
 class Cart {
 
@@ -28,6 +29,13 @@ class Cart {
 	 * @var integer
 	 */
 	protected $shipping;
+
+	/**
+	 * check if cart has shipping products
+	 *
+	 * @var integer
+	 */
+	protected $hasShipping;
 
 	/**
 	 * The Eloquent model a cart is associated with
@@ -554,5 +562,32 @@ class Cart {
 	{
 		$this->shipping = $amount;
 		$this->setCart();
+	}
+
+	/**
+	 * check if cart has products to shipping
+	 *
+	 * @param  boolean		$hasShipping to set hasShipping variable
+	 * @return boolean | void
+	 * @throws ShoppingcartInvalidDataTypeException
+	 */
+	public function hasShipping($hasShipping = null)
+	{
+		if($hasShipping === null)
+		{
+			return $this->hasShipping;
+		}
+		else
+		{
+			if(is_bool($hasShipping))
+			{
+				$this->hasShipping = $hasShipping;
+				$this->setCart();
+			}
+			else
+			{
+				throw new ShoppingcartInvalidDataTypeException;
+			}
+		}
 	}
 }
