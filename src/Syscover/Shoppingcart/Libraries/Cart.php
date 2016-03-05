@@ -23,6 +23,13 @@ class Cart {
 	protected $cartCollection;
 
 	/**
+	 * shipping amount
+	 *
+	 * @var integer
+	 */
+	protected $shipping;
+
+	/**
 	 * The Eloquent model a cart is associated with
 	 *
 	 * @var string
@@ -190,10 +197,6 @@ class Cart {
 
 		return $this->setCartCollection($cartCollection);
 	}
-
-
-
-
 
 	/**
 	 * Update the quantity of one row of the cart
@@ -502,5 +505,29 @@ class Cart {
 
 		// Return self so the method is chainable
 		return $this;
+	}
+
+	/**
+	 * return shipping amount
+	 *
+	 * @return integer
+	 */
+	public function getShipping()
+	{
+		if(isset($this->shipping))
+			return $this->shipping;
+		else
+			return 0;
+	}
+
+	/**
+	 * set shipping amount
+	 *
+	 * @return void
+	 */
+	public function setShipping($amount)
+	{
+		$this->shipping = $amount;
+		$this->setCart();
 	}
 }
