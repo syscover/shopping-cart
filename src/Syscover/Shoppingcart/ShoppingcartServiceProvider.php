@@ -1,7 +1,7 @@
 <?php namespace Syscover\Shoppingcart;
 
 use Illuminate\Support\ServiceProvider;
-use Syscover\Shoppingcart\Facades\CartProvider;
+use Syscover\Shoppingcart\Libraries\CartProvider;
 
 class ShoppingcartServiceProvider extends ServiceProvider
 {
