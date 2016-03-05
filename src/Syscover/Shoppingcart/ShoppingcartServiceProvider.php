@@ -1,4 +1,4 @@
-<?php namespace Syscover\Forms;
+<?php namespace Syscover\Shoppingcart;
 
 use Illuminate\Support\ServiceProvider;
 use Syscover\Shoppingcart\Facades\CartProvider;
