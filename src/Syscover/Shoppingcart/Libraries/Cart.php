@@ -286,6 +286,29 @@ class Cart {
 	 *
 	 * @return float
 	 */
+	public function subtotal()
+	{
+		$total 			= 0;
+		$cartCollection = $this->getCartCollection();
+
+		if(empty($cartCollection))
+		{
+			return $total;
+		}
+
+		foreach($cartCollection as $row)
+		{
+			$total += $row->subtotal;
+		}
+
+		return $total;
+	}
+
+	/**
+	 * Get the price total
+	 *
+	 * @return float
+	 */
 	public function total()
 	{
 		$total 			= 0;
@@ -300,6 +323,8 @@ class Cart {
 		{
 			$total += $row->subtotal;
 		}
+
+		$total += $this->getShipping();
 
 		return $total;
 	}

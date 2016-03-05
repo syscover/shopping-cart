@@ -136,10 +136,21 @@ CartProvider::instance()->destroy()
 CartProvider::instance()->destroy();
 
 
+CartProvider::instance()->subtotal()
+
+/**
+ * Get the price without shipping
+ *
+ * @return float
+ */
+
+CartProvider::instance()->subtotal();
+
+
 CartProvider::instance()->total()
 
 /**
- * Get the price total
+ * Get the price total with shipping
  *
  * @return float
  */
