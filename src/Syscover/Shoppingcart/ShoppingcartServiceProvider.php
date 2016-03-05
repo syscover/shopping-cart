@@ -12,7 +12,10 @@ class ShoppingcartServiceProvider extends ServiceProvider
 	 */
 	public function boot()
 	{
-		//
+		// register tests
+		$this->publishes([
+			__DIR__ . '/../../tests/' 					=> base_path('/tests')
+		], 'tests');
 	}
 
 	/**
@@ -27,5 +30,4 @@ class ShoppingcartServiceProvider extends ServiceProvider
 			return new CartProvider();
 		});
 	}
-
 }
