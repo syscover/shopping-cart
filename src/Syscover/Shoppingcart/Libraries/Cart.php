@@ -77,6 +77,9 @@ class Cart {
 	 */
 	private function setCart()
 	{
+		// before set session, update amounts from cartPriceRuleCollection
+		$this->updateAmountsCartPriceRuleCollection();
+
 		session()->put($this->instance, $this);
 	}
 
@@ -298,7 +301,7 @@ class Cart {
 	}
 
 	/**
-	 * Get the price total
+	 * Get the price subtotal, sum of all rows except transport
 	 *
 	 * @return float
 	 */
@@ -321,7 +324,36 @@ class Cart {
 	}
 
 	/**
-	 * Get the price total
+	 * @return decimal
+	 */
+//	public function discount()
+//	{
+//		$cartPriceRuleCollection 	= $this->getCartPriceRuleCollection();
+//		$fixedDiscountAmount		= 0;
+//		$percentageDiscountAmount	= 0;
+//
+//		foreach($cartPriceRuleCollection as $cartPriceRule)
+//		{
+//			// fixed discount amount
+//			if($cartPriceRule->discount_type_120 == 3)
+//			{
+//				$fixedDiscountAmount += $cartPriceRule->discount_amount_120;
+//			}
+//
+//			// percentage  discount amount
+//			if($cartPriceRule->discount_percentage_120 == 2)
+//			{
+//				$percentageDiscountAmount += $cartPriceRule->discount_amount_120;
+//			}
+//		}
+//
+//		$new_width = ($percentage / 100) * $totalWidth;
+//
+//		return $discountFixedAmount;
+//	}
+
+	/**
+	 * Get the price total, shipping include
 	 *
 	 * @return float
 	 */
@@ -636,11 +668,10 @@ class Cart {
 	}
 
 	/**
-	 * set shipping amount
+	 * add CartPriceRule to collection CartPriceRuleCollection
 	 *
 	 * @param  \Syscover\Market\Models\CartPriceRule  $cartPriceRule
-	 *
-	 * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
+	 * @return void
 	 */
 	public function addCartPriceRule($cartPriceRule)
 	{
@@ -650,14 +681,54 @@ class Cart {
 		// comprobamos que el id de descuento no existe en el carro
 		if($cartPriceRuleCollection->has($cartPriceRuleId))
 		{
-			// error, este descuento existe en el carro
+			// error, este descuento ya existe en el carro
 		}
 		else
 		{
 			// add object to cart price collection
 			$cartPriceRuleCollection->put($cartPriceRuleId, $cartPriceRule);
 
-			return $this->setCartPriceRuleCollection($cartPriceRuleCollection);
+			// save cartPriceRuleCollection
+			$this->setCartPriceRuleCollection($cartPriceRuleCollection);
+		}
+	}
+
+	/**
+	 * update and create all amounts, inside all cartPriceRules
+	 */
+	protected function updateAmountsCartPriceRuleCollection()
+	{
+		$cartPriceRuleCollection = $this->getCartPriceRuleCollection();
+
+		foreach($cartPriceRuleCollection as &$cartPriceRule)
+		{
+			// discount by percentage
+			if($cartPriceRule->discount_type_120 == 2)
+			{
+				// check if discount is with shipping amount
+				if($cartPriceRule->apply_shipping_amount_120)
+				{
+					$amount = ($this->total() * 100) / $cartPriceRule->discount_percentage_120;
+				}
+				else
+				{
+					$amount = ($this->subtotal() * 100) / $cartPriceRule->discount_percentage_120;
+				}
+
+				// check if discount is lower that maximum discount allowed
+				if($cartPriceRule->maximum_discount_amount_120 != null && $amount > $cartPriceRule->maximum_discount_amount_120)
+				{
+					$amount = $cartPriceRule->maximum_discount_amount_120;
+				}
+
+				$cartPriceRule->amount = $amount;
+			}
+
+			// discount by fixed amount
+			if($cartPriceRule->discount_type_120 == 3)
+			{
+				$cartPriceRule->amount = $cartPriceRule->discount_amount_120;
+			}
 		}
 	}
 }
