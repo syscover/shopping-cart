@@ -270,9 +270,8 @@ class Cart {
 		$cartCollection->forget($rowId);
 
 		if($cartCollection->count() == 0)
-		{
 			$this->cartPriceRuleCollection 	= new CartPriceRuleCollection;
-		}
+
 
 		// Fire the cart.removed event
 		event('cart.removed', $rowId);
