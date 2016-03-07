@@ -357,7 +357,9 @@ class Cart {
 			$total += $row->subtotal;
 		}
 
+		// sum shipping
 		$total += $this->getShipping();
+		$total -= $this->discount();
 
 		return $total;
 	}
@@ -693,7 +695,7 @@ class Cart {
 				// check if discount is with shipping amount
 				if($cartPriceRule->apply_shipping_amount_120)
 				{
-					$amount = ($this->total() * $cartPriceRule->discount_percentage_120) / 100;
+					$amount = (($this->subtotal() + $this->getShipping()) * $cartPriceRule->discount_percentage_120) / 100;
 				}
 				else
 				{
