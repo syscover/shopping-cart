@@ -24,6 +24,13 @@ class Cart {
 	protected $cartCollection;
 
 	/**
+	 * all discounts applied to cart
+	 *
+	 * @var \Syscover\Shoppingcart\Libraries\DiscountCollection
+	 */
+	protected $discountCollection;
+
+	/**
 	 * shipping amount
 	 *
 	 * @var integer
