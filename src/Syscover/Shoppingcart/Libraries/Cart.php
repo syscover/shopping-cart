@@ -326,31 +326,16 @@ class Cart {
 	/**
 	 * @return decimal
 	 */
-//	public function discount()
-//	{
-//		$cartPriceRuleCollection 	= $this->getCartPriceRuleCollection();
-//		$fixedDiscountAmount		= 0;
-//		$percentageDiscountAmount	= 0;
-//
-//		foreach($cartPriceRuleCollection as $cartPriceRule)
-//		{
-//			// fixed discount amount
-//			if($cartPriceRule->discount_type_120 == 3)
-//			{
-//				$fixedDiscountAmount += $cartPriceRule->discount_amount_120;
-//			}
-//
-//			// percentage  discount amount
-//			if($cartPriceRule->discount_percentage_120 == 2)
-//			{
-//				$percentageDiscountAmount += $cartPriceRule->discount_amount_120;
-//			}
-//		}
-//
-//		$new_width = ($percentage / 100) * $totalWidth;
-//
-//		return $discountFixedAmount;
-//	}
+	public function discount()
+	{
+		$cartPriceRuleCollection 	= $this->getCartPriceRuleCollection();
+		$discountAmount				= 0;
+
+		foreach($cartPriceRuleCollection as $cartPriceRule)
+			$discountAmount +=  $cartPriceRule->amount;
+
+		return $discountAmount;
+	}
 
 	/**
 	 * Get the price total, shipping include
