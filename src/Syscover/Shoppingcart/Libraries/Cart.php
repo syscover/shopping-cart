@@ -693,11 +693,11 @@ class Cart {
 				// check if discount is with shipping amount
 				if($cartPriceRule->apply_shipping_amount_120)
 				{
-					$amount = ($this->total() * 100) / $cartPriceRule->discount_percentage_120;
+					$amount = ($this->total() * $cartPriceRule->discount_percentage_120) / 100;
 				}
 				else
 				{
-					$amount = ($this->subtotal() * 100) / $cartPriceRule->discount_percentage_120;
+					$amount = ($this->subtotal() * $cartPriceRule->discount_percentage_120) / 100;
 				}
 
 				// check if discount is lower that maximum discount allowed
