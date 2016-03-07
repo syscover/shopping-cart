@@ -69,5 +69,4 @@ class CartRowCollection extends Collection {
 
 		return $found;
 	}
-
 }

@@ -28,7 +28,7 @@ class Cart {
 	 *
 	 * @var \Syscover\Shoppingcart\Libraries\DiscountCollection
 	 */
-	protected $discountCollection;
+	protected $cartPriceRuleCollection;
 
 	/**
 	 * shipping amount
@@ -64,15 +64,16 @@ class Cart {
 	 */
 	public function __construct($instance)
 	{
-		$this->instance 		= $instance;
-		$this->cartCollection 	= new CartCollection;
+		$this->instance 				= $instance;
+		$this->cartCollection 			= new CartCollection;
+		$this->cartPriceRuleCollection 	= new CartPriceRuleCollection;
 	}
 
 
 	/**
 	 * Get the CarCollection
 	 *
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	private function setCart()
 	{
@@ -82,7 +83,7 @@ class Cart {
 	/**
 	 * Get the CarCollection
 	 *
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function getCartCollection()
 	{
@@ -92,8 +93,8 @@ class Cart {
 	/**
 	 * Update the CarCollection
 	 *
-	 * @param  Syscover\Shoppingcart\Libraries\CartCollection  $cart  The new cart content
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @param  \Syscover\Shoppingcart\Libraries\CartCollection  $cartCollection  The new cart content
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function setCartCollection($cartCollection)
 	{
@@ -113,7 +114,7 @@ class Cart {
 	 * @param int    	    $qty      Item qty to add to the cart
 	 * @param float  	    $price    Price of one item
 	 * @param array  	    $options  Array of additional options, such as 'size' or 'color
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection|void
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection|void
 	 * @throws ShoppingcartInvalidItemException
 	 * @throws ShoppingcartInvalidPriceException
 	 * @throws ShoppingcartInvalidQtyException'
@@ -174,7 +175,7 @@ class Cart {
 	 * @param int     $qty      Item qty to add to the cart
 	 * @param float   $price    Price of one item
 	 * @param array   $options  Array of additional options, such as 'size' or 'color'
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 * @throws ShoppingcartInvalidItemException
 	 * @throws ShoppingcartInvalidPriceException
 	 * @throws ShoppingcartInvalidQtyException
@@ -251,7 +252,7 @@ class Cart {
 
 	/**
 	 * @param $rowId
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 * @throws ShoppingcartInvalidRowIDException
 	 */
 	public function remove($rowId)
@@ -275,7 +276,7 @@ class Cart {
 	 * Get a row of the cart by its ID
 	 *
 	 * @param  string  $rowId  The ID of the row to fetch
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	public function get($rowId)
 	{
@@ -287,7 +288,7 @@ class Cart {
 	/**
 	 * Get the cart content
 	 *
-	 * @return Syscover\Shoppingcart\Libraries\CartRowCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartRowCollection
 	 */
 	public function content()
 	{
@@ -397,7 +398,7 @@ class Cart {
 	 *
 	 * @param  string  $id       Unique ID of the item
 	 * @param  array   $options  Array of additional options, such as 'size' or 'color'
-	 * @return boolean
+	 * @return string
 	 */
 	protected function generateRowId($id, $options)
 	{
@@ -422,7 +423,7 @@ class Cart {
 	 *
 	 * @param  string   $rowId  The ID of the row to update
 	 * @param  array  	$attributes    The quantity and price to add to the row
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function updateRow($rowId, $attributes)
 	{
@@ -462,7 +463,7 @@ class Cart {
 	 * @param  int     $qty      Item qty to add to the cart
 	 * @param  float   $price    Price of one item
 	 * @param  array   $options  Array of additional options, such as 'size' or 'color'
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function createRow($rowId, $id, $name, $qty, $price, $options)
 	{
@@ -493,7 +494,7 @@ class Cart {
 	 *
 	 * @param  string  $rowId  The ID of the row
 	 * @param  int     $qty    The qty to add
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function updateQty($rowId, $qty)
 	{
@@ -510,7 +511,7 @@ class Cart {
 	 *
 	 * @param  string  $rowId       The ID of the row
 	 * @param  array   $attributes  An array of attributes to update
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function updateAttribute($rowId, $attributes)
 	{
@@ -533,7 +534,7 @@ class Cart {
 	 *
 	 * @param  string    $modelName        The name of the model
 	 * @param  string    $modelNamespace   The namespace of the model
-	 * @return Syscover\Shoppingcart\Libraries\Cart
+	 * @return \Syscover\Shoppingcart\Libraries\Cart
 	 * @throws ShoppingcartUnknownModelException
 	 */
 	public function associate($modelName, $modelNamespace = null)
@@ -595,6 +596,68 @@ class Cart {
 			{
 				throw new ShoppingcartInvalidDataTypeException;
 			}
+		}
+	}
+
+	/**
+	 * Generate a unique id for the new cartPriceRule
+	 *
+	 * @param  \Syscover\Market\Models\CartPriceRule   	$cartPriceRule
+	 * @return string
+	 */
+	protected function generateCartPriceRuleId($cartPriceRule)
+	{
+		return md5($cartPriceRule->id_120 . serialize($cartPriceRule));
+	}
+
+	/**
+	 * Get the DiscountCollection
+	 *
+	 * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
+	 */
+	protected function getCartPriceRuleCollection()
+	{
+		return $this->cartPriceRuleCollection;
+	}
+
+	/**
+	 * Get the DiscountCollection
+	 *
+	 * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
+	 */
+	protected function setCartPriceRuleCollection($cartPriceRuleCollection)
+	{
+		$this->cartPriceRuleCollection = $cartPriceRuleCollection;
+
+		// save current changes
+		$this->setCart();
+
+		return $this->cartPriceRuleCollection;
+	}
+
+	/**
+	 * set shipping amount
+	 *
+	 * @param  \Syscover\Market\Models\CartPriceRule  $cartPriceRule
+	 *
+	 * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
+	 */
+	public function addCartPriceRule($cartPriceRule)
+	{
+		$cartPriceRuleCollection 	= $this->getCartPriceRuleCollection();
+		$cartPriceRuleId 			= $this->generateCartPriceRuleId($cartPriceRule);
+
+		// comprobamos que el id de descuento no existe en el carro
+		if($cartPriceRuleCollection->has($cartPriceRuleId))
+		{
+			// error, este descuento existe en el carro
+		}
+		else
+		{
+			// add object to cart price collection
+			$cartPriceRuleCollection->put($cartPriceRuleId, $cartPriceRule);
+
+			return $this->setCartPriceRuleCollection($cartPriceRuleCollection);
 		}
 	}
 }

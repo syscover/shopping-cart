@@ -2,6 +2,6 @@
 
 use Illuminate\Support\Collection;
 
-class DiscountCollection extends Collection {
+class CartPriceRuleCollection extends Collection {
 
 }
