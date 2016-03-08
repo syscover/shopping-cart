@@ -679,6 +679,16 @@ class Cart {
 	}
 
 	/**
+	 * count cartPriceRuleCollection
+	 *
+	 * @return integer
+	 */
+	protected function countCartPriceRuleCollection()
+	{
+		return $this->cartPriceRuleCollection->count();
+	}
+
+	/**
 	 * get if cart has free shipping
 	 *
 	 * @return boolean
