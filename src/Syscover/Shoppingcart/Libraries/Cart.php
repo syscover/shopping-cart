@@ -40,9 +40,16 @@ class Cart {
 	/**
 	 * check if cart has shipping products
 	 *
-	 * @var integer
+	 * @var boolean
 	 */
 	protected $hasShipping;
+
+	/**
+	 * check if cart has free shipping
+	 *
+	 * @var boolean
+	 */
+	protected $freeShipping;
 
 	/**
 	 * The Eloquent model a cart is associated with
@@ -67,6 +74,7 @@ class Cart {
 		$this->instance 				= $instance;
 		$this->cartCollection 			= new CartCollection;
 		$this->cartPriceRuleCollection 	= new CartPriceRuleCollection;
+		$this->hasFreeShipping			= false;
 	}
 
 
@@ -271,7 +279,6 @@ class Cart {
 
 		if($cartCollection->count() == 0)
 			$this->cartPriceRuleCollection 	= new CartPriceRuleCollection;
-
 
 		// Fire the cart.removed event
 		event('cart.removed', $rowId);
@@ -685,7 +692,8 @@ class Cart {
 	}
 
 	/**
-	 * update and create all amounts, inside all cartPriceRules
+	 * Update and create all amounts, inside all cartPriceRules
+	 * This function set all data about rules, is called with every change
 	 */
 	protected function updateAmountsCartPriceRuleCollection()
 	{
@@ -720,6 +728,20 @@ class Cart {
 			{
 				$cartPriceRule->amount = $cartPriceRule->discount_amount_120;
 			}
+
+			// check if there is any cartPriceRule with free shipping
+			if($cartPriceRule->free_shipping_120 === true)
+			{
+				$this->freeShipping = false;
+			}
 		}
 	}
+
+	public function hasFreeShipping()
+	{
+		return $this->freeShipping;
+	}
+
+	// countCartPriceRule ()
+	// hasCountCartPriceRuleNotCombinable (Comprueba si hay una regla que no sea combinable dentro del carro)
 }
