@@ -717,6 +717,26 @@ class Cart {
 	}
 
 	/**
+	 * get rule not combinable from cart, there can only be one
+	 *
+	 * @return mixed|null
+	 */
+	public function getCartPriceRuleNotCombinable()
+	{
+		$cartPriceRuleCollection = $this->getCartPriceRuleCollection();
+
+
+		foreach($cartPriceRuleCollection as $cartPriceRule)
+		{
+			if($cartPriceRule->combinable_120 == false)
+			{
+				return $cartPriceRule
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * set cart has any rule not combinable
 	 *
 	 * @param 	boolean	$cartPriceRuleNotCombinable
