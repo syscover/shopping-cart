@@ -287,12 +287,24 @@ class Cart {
 		$cartCollection->forget($rowId);
 
 		if($cartCollection->count() == 0)
-			$this->cartPriceRuleCollection 	= new CartPriceRuleCollection;
+			$this->resetCartProperties();
 
 		// Fire the cart.removed event
 		event('cart.removed', $rowId);
 
 		return $this->setCartCollection($cartCollection);
+	}
+
+	/**
+	 * reset cart properties when cart collection is empty
+	 */
+	private function resetCartProperties()
+	{
+		$this->cartPriceRuleCollection 		= new CartPriceRuleCollection;
+		$this->freeShipping					= false;
+		$this->shippingAmount				= 0;
+		$this->shipping						= false;
+		$this->cartPriceRuleNotCombinable	= false;
 	}
 
 	/**
