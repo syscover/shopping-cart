@@ -33,16 +33,16 @@ class Cart {
 	/**
 	 * shipping amount
 	 *
-	 * @var integer
+	 * @var double
 	 */
-	protected $shipping;
+	protected $shippingAmount;
 
 	/**
 	 * check if cart has shipping products
 	 *
 	 * @var boolean
 	 */
-	protected $hasShipping;
+	protected $shipping;
 
 	/**
 	 * check if cart has free shipping
@@ -75,8 +75,9 @@ class Cart {
 		$this->cartCollection 			= new CartCollection;
 		$this->cartPriceRuleCollection 	= new CartPriceRuleCollection;
 		$this->hasFreeShipping			= false;
+		$this->shippingAmount			= 0;
+		$this->shipping					= false;
 	}
-
 
 	/**
 	 * Get the CarCollection
@@ -349,7 +350,7 @@ class Cart {
 	}
 
 	/**
-	 * Get the price total, shipping include
+	 * Get the price total, include shipping amount
 	 *
 	 * @return float
 	 */
@@ -368,8 +369,13 @@ class Cart {
 			$total += $row->subtotal;
 		}
 
-		// sum shipping
-		$total += $this->getShipping();
+		// check that, don't have free shipping
+		if( ! $this->hasFreeShipping())
+		{
+			// sum shipping amount
+			$total += $this->getShippingAmount();
+		}
+
 		$total -= $this->discount();
 
 		return $total;
@@ -583,10 +589,10 @@ class Cart {
 	 *
 	 * @return integer
 	 */
-	public function getShipping()
+	public function getShippingAmount()
 	{
-		if(isset($this->shipping))
-			return $this->shipping;
+		if(isset($this->shippingAmount))
+			return $this->shippingAmount;
 		else
 			return 0;
 	}
@@ -596,36 +602,38 @@ class Cart {
 	 *
 	 * @return void
 	 */
-	public function setShipping($amount)
+	public function setShippingAmount($shippingAmount)
 	{
-		$this->shipping = $amount;
+		$this->shippingAmount = $shippingAmount;
 		$this->setCart();
 	}
 
 	/**
 	 * check if cart has products to shipping
 	 *
-	 * @param  boolean		$hasShipping to set hasShipping variable
 	 * @return boolean | void
+	 */
+	public function hasShipping()
+	{
+		return $this->shipping;
+	}
+
+	/**
+	 * set cart has products to shipping
+	 *
+	 * @param  boolean		$shipping
 	 * @throws ShoppingcartInvalidDataTypeException
 	 */
-	public function hasShipping($hasShipping = null)
+	public function setShipping($shipping)
 	{
-		if($hasShipping === null)
+		if(is_bool($shipping))
 		{
-			return $this->hasShipping;
+			$this->shipping = $shipping;
+			$this->setCart();
 		}
 		else
 		{
-			if(is_bool($hasShipping))
-			{
-				$this->hasShipping = $hasShipping;
-				$this->setCart();
-			}
-			else
-			{
-				throw new ShoppingcartInvalidDataTypeException;
-			}
+			throw new ShoppingcartInvalidDataTypeException;
 		}
 	}
 
@@ -732,7 +740,7 @@ class Cart {
 			// check if there is any cartPriceRule with free shipping
 			if($cartPriceRule->free_shipping_120 === true)
 			{
-				$this->freeShipping = false;
+				$this->setFreeShipping(true);
 			}
 		}
 	}
@@ -740,6 +748,18 @@ class Cart {
 	public function hasFreeShipping()
 	{
 		return $this->freeShipping;
+	}
+
+	public function setFreeShipping($freeShipping)
+	{
+		if(is_bool($freeShipping))
+		{
+			$this->freeShipping = $freeShipping;
+		}
+		else
+		{
+			throw new ShoppingcartInvalidDataTypeException;
+		}
 	}
 
 	// countCartPriceRule ()
