@@ -667,6 +667,62 @@ class Cart {
 	}
 
 	/**
+	 * get if cart has free shipping
+	 *
+	 * @return boolean
+	 */
+	public function hasFreeShipping()
+	{
+		return $this->freeShipping;
+	}
+
+	/**
+	 * set free shipping property
+	 *
+	 * @param 	boolean 	$freeShipping
+	 * @throws 	ShoppingcartInvalidDataTypeException
+	 */
+	public function setFreeShipping($freeShipping)
+	{
+		if(is_bool($freeShipping))
+		{
+			$this->freeShipping = $freeShipping;
+		}
+		else
+		{
+			throw new ShoppingcartInvalidDataTypeException;
+		}
+	}
+
+	/**
+	 * get if cart has any rule not combinable
+	 *
+	 * @return boolean
+	 */
+	public function hasCartPriceRuleNotCombinable()
+	{
+		return $this->cartPriceRuleNotCombinable;
+	}
+
+	/**
+	 * set cart has any rule not combinable
+	 *
+	 * @param 	boolean	$cartPriceRuleNotCombinable
+	 * @throws 	ShoppingcartInvalidDataTypeException
+	 */
+	public function setCartPriceRuleNotCombinable($cartPriceRuleNotCombinable)
+	{
+		if(is_bool($cartPriceRuleNotCombinable))
+		{
+			$this->cartPriceRuleNotCombinable = $cartPriceRuleNotCombinable;
+		}
+		else
+		{
+			throw new ShoppingcartInvalidDataTypeException;
+		}
+	}
+
+	/**
 	 * Get the DiscountCollection
 	 *
 	 * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
@@ -750,62 +806,12 @@ class Cart {
 			{
 				$this->setFreeShipping(true);
 			}
-		}
-	}
 
-	/**
-	 * get if cart has free shipping
-	 *
-	 * @return boolean
-	 */
-	public function hasFreeShipping()
-	{
-		return $this->freeShipping;
-	}
-
-	/**
-	 * set free shipping property
-	 *
-	 * @param 	boolean 	$freeShipping
-	 * @throws 	ShoppingcartInvalidDataTypeException
-	 */
-	public function setFreeShipping($freeShipping)
-	{
-		if(is_bool($freeShipping))
-		{
-			$this->freeShipping = $freeShipping;
-		}
-		else
-		{
-			throw new ShoppingcartInvalidDataTypeException;
-		}
-	}
-
-	/**
-	 * get if cart has any rule not combinable
-	 *
-	 * @return boolean
-	 */
-	public function hasCartPriceRuleNotCombinable()
-	{
-		return $this->cartPriceRuleNotCombinable;
-	}
-
-	/**
-	 * set cart has any rule not combinable
-	 *
-	 * @param 	boolean	$cartPriceRuleNotCombinable
-	 * @throws 	ShoppingcartInvalidDataTypeException
-	 */
-	public function setCartPriceRuleNotCombinable($cartPriceRuleNotCombinable)
-	{
-		if(is_bool($cartPriceRuleNotCombinable))
-		{
-			$this->cartPriceRuleNotCombinable = $cartPriceRuleNotCombinable;
-		}
-		else
-		{
-			throw new ShoppingcartInvalidDataTypeException;
+			// check if there is this rule is combinable
+			if( ! $cartPriceRule->combinable_120)
+			{
+				$this->setCartPriceRuleNotCombinable(true);
+			}
 		}
 	}
 }
