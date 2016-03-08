@@ -768,6 +768,26 @@ class Cart {
 		return $this->cartPriceRuleCollection;
 	}
 
+
+	/**
+	 * check if any cartPriceRule exist in CartPriceRuleCollection
+	 *
+	 * @param  \Syscover\Market\Models\CartPriceRule  $cartPriceRule
+	 * @return boolean
+	 */
+	public function hasCartPriceRule($cartPriceRule)
+	{
+		$cartPriceRuleCollection 	= $this->getCartPriceRuleCollection();
+		$cartPriceRuleId 			= $this->generateCartPriceRuleId($cartPriceRule);
+
+		// comprobamos que el id de descuento no existe en el carro
+		if($cartPriceRuleCollection->has($cartPriceRuleId))
+		{
+			return true;
+		}
+		return false;
+	}
+
 	/**
 	 * add CartPriceRule to collection CartPriceRuleCollection
 	 *
@@ -776,16 +796,16 @@ class Cart {
 	 */
 	public function addCartPriceRule($cartPriceRule)
 	{
-		$cartPriceRuleCollection 	= $this->getCartPriceRuleCollection();
-		$cartPriceRuleId 			= $this->generateCartPriceRuleId($cartPriceRule);
-
 		// comprobamos que el id de descuento no existe en el carro
-		if($cartPriceRuleCollection->has($cartPriceRuleId))
+		if($this->hasCartPriceRule($cartPriceRule))
 		{
 			// error, este descuento ya existe en el carro
 		}
 		else
 		{
+			$cartPriceRuleCollection 	= $this->getCartPriceRuleCollection();
+			$cartPriceRuleId 			= $this->generateCartPriceRuleId($cartPriceRule);
+
 			// add object to cart price collection
 			$cartPriceRuleCollection->put($cartPriceRuleId, $cartPriceRule);
 
