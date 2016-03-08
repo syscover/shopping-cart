@@ -52,6 +52,13 @@ class Cart {
 	protected $freeShipping;
 
 	/**
+	 * check if inside $cartPriceRuleCollection have ant not combinale rule
+	 *
+	 * @var boolean
+	 */
+	protected $cartPriceRuleNotCombinable;
+
+	/**
 	 * The Eloquent model a cart is associated with
 	 *
 	 * @var string
@@ -71,12 +78,13 @@ class Cart {
 	 */
 	public function __construct($instance)
 	{
-		$this->instance 				= $instance;
-		$this->cartCollection 			= new CartCollection;
-		$this->cartPriceRuleCollection 	= new CartPriceRuleCollection;
-		$this->freeShipping				= false;
-		$this->shippingAmount			= 0;
-		$this->shipping					= false;
+		$this->instance 					= $instance;
+		$this->cartCollection 				= new CartCollection;
+		$this->cartPriceRuleCollection 		= new CartPriceRuleCollection;
+		$this->freeShipping					= false;
+		$this->shippingAmount				= 0;
+		$this->shipping						= false;
+		$this->cartPriceRuleNotCombinable	= false;
 	}
 
 	/**
@@ -746,7 +754,9 @@ class Cart {
 	}
 
 	/**
-	 * @return bool
+	 * get if cart has free shipping
+	 *
+	 * @return boolean
 	 */
 	public function hasFreeShipping()
 	{
@@ -754,8 +764,10 @@ class Cart {
 	}
 
 	/**
-	 * @param $freeShipping
-	 * @throws ShoppingcartInvalidDataTypeException
+	 * set free shipping property
+	 *
+	 * @param 	boolean 	$freeShipping
+	 * @throws 	ShoppingcartInvalidDataTypeException
 	 */
 	public function setFreeShipping($freeShipping)
 	{
@@ -769,6 +781,31 @@ class Cart {
 		}
 	}
 
-	// countCartPriceRule ()
-	// hasCountCartPriceRuleNotCombinable (Comprueba si hay una regla que no sea combinable dentro del carro)
+	/**
+	 * get if cart has any rule not combinable
+	 *
+	 * @return boolean
+	 */
+	public function hasCartPriceRuleNotCombinable()
+	{
+		return $this->cartPriceRuleNotCombinable;
+	}
+
+	/**
+	 * set cart has any rule not combinable
+	 *
+	 * @param 	boolean	$cartPriceRuleNotCombinable
+	 * @throws 	ShoppingcartInvalidDataTypeException
+	 */
+	public function setCartPriceRuleNotCombinable($cartPriceRuleNotCombinable)
+	{
+		if(is_bool($cartPriceRuleNotCombinable))
+		{
+			$this->cartPriceRuleNotCombinable = $cartPriceRuleNotCombinable;
+		}
+		else
+		{
+			throw new ShoppingcartInvalidDataTypeException;
+		}
+	}
 }
