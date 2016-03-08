@@ -74,7 +74,7 @@ class Cart {
 		$this->instance 				= $instance;
 		$this->cartCollection 			= new CartCollection;
 		$this->cartPriceRuleCollection 	= new CartPriceRuleCollection;
-		$this->hasFreeShipping			= false;
+		$this->freeShipping				= false;
 		$this->shippingAmount			= 0;
 		$this->shipping					= false;
 	}
@@ -745,11 +745,18 @@ class Cart {
 		}
 	}
 
+	/**
+	 * @return bool
+	 */
 	public function hasFreeShipping()
 	{
 		return $this->freeShipping;
 	}
 
+	/**
+	 * @param $freeShipping
+	 * @throws ShoppingcartInvalidDataTypeException
+	 */
 	public function setFreeShipping($freeShipping)
 	{
 		if(is_bool($freeShipping))
