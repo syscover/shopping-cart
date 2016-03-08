@@ -725,12 +725,11 @@ class Cart {
 	{
 		$cartPriceRuleCollection = $this->getCartPriceRuleCollection();
 
-
 		foreach($cartPriceRuleCollection as $cartPriceRule)
 		{
 			if($cartPriceRule->combinable_120 == false)
 			{
-				return $cartPriceRule
+				return $cartPriceRule;
 			}
 		}
 		return null;
