@@ -738,7 +738,7 @@ class Cart {
 			}
 
 			// check if there is any cartPriceRule with free shipping
-			if($cartPriceRule->free_shipping_120 === true)
+			if($cartPriceRule->free_shipping_120)
 			{
 				$this->setFreeShipping(true);
 			}
