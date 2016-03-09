@@ -364,7 +364,7 @@ class Cart {
 		$discountAmount				= 0;
 
 		foreach($cartPriceRuleCollection as $cartPriceRule)
-			$discountAmount +=  $cartPriceRule->amount;
+			$discountAmount +=  $cartPriceRule->discount_amount;
 
 		return $discountAmount;
 	}
@@ -840,26 +840,26 @@ class Cart {
 				// check if discount is with shipping amount
 				if($cartPriceRule->apply_shipping_amount_120)
 				{
-					$amount = (($this->subtotal() + $this->getShipping()) * $cartPriceRule->discount_percentage_120) / 100;
+					$discountAmount = (($this->subtotal() + $this->getShipping()) * $cartPriceRule->discount_percentage_120) / 100;
 				}
 				else
 				{
-					$amount = ($this->subtotal() * $cartPriceRule->discount_percentage_120) / 100;
+					$discountAmount = ($this->subtotal() * $cartPriceRule->discount_percentage_120) / 100;
 				}
 
 				// check if discount is lower that maximum discount allowed
-				if($cartPriceRule->maximum_discount_amount_120 != null && $amount > $cartPriceRule->maximum_discount_amount_120)
+				if($cartPriceRule->maximum_discount_amount_120 != null && $discountAmount > $cartPriceRule->maximum_discount_amount_120)
 				{
-					$amount = $cartPriceRule->maximum_discount_amount_120;
+					$discountAmount = $cartPriceRule->maximum_discount_amount_120;
 				}
 
-				$cartPriceRule->amount = $amount;
+				$cartPriceRule->discount_amount = $discountAmount;
 			}
 
 			// discount by fixed amount
 			if($cartPriceRule->discount_type_120 == 3)
 			{
-				$cartPriceRule->amount = $cartPriceRule->discount_fixed_amount_120;
+				$cartPriceRule->discount_amount = $cartPriceRule->discount_fixed_amount_120;
 			}
 
 			// check if there is any cartPriceRule with free shipping
