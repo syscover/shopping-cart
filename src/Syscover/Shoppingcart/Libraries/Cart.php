@@ -832,6 +832,7 @@ class Cart {
 	{
 		$cartPriceRuleCollection = $this->getCartPriceRuleCollection();
 
+		// in this step, add property discount_amount, inside cartPriceRule object
 		foreach($cartPriceRuleCollection as &$cartPriceRule)
 		{
 			// discount by percentage
