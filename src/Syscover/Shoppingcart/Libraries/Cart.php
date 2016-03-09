@@ -673,7 +673,7 @@ class Cart {
 	 *
 	 * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
 	 */
-	protected function getCartPriceRuleCollection()
+	public function getCartPriceRuleCollection()
 	{
 		return $this->cartPriceRuleCollection;
 	}
@@ -683,7 +683,7 @@ class Cart {
 	 *
 	 * @return integer
 	 */
-	protected function countCartPriceRuleCollection()
+	public function countCartPriceRuleCollection()
 	{
 		return $this->cartPriceRuleCollection->count();
 	}
