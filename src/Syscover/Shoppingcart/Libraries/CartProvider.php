@@ -14,7 +14,7 @@ class CartProvider {
 	/**
 	 * Get the carts content, if there is no cart content set yet, return a new empty Collection
 	 *
-	 * @return Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
 	 */
 	protected function getCart()
 	{
@@ -27,7 +27,7 @@ class CartProvider {
 	 * Set the current cart instance
 	 *
 	 * @param  string  $instance  Cart instance name
-	 * @return Syscover\Shoppingcart\Libraries\Cart
+	 * @return \Syscover\Shoppingcart\Libraries\Cart
 	 * @throws ShoppingcartInstanceException
 	 */
 	public function instance($instance = 'main')
@@ -48,23 +48,5 @@ class CartProvider {
 	protected function getInstance()
 	{
 		return 'cart.' . $this->instance;
-	}
-
-	/**
-	 * Empty the cart
-	 *
-	 * @return boolean
-	 */
-	public function destroy()
-	{
-		// Fire the cart.destroy event
-		event('cart.destroy');
-
-		$result = session()->put($this->getInstance(), null);
-
-		// Fire the cart.destroyed event
-		event('cart.destroyed');
-
-		return $result;
 	}
 }

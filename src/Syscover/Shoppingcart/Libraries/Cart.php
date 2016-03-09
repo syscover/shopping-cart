@@ -88,6 +88,24 @@ class Cart {
 	}
 
 	/**
+	 * Empty the cart
+	 *
+	 * @return boolean
+	 */
+	public function destroy()
+	{
+		// Fire the cart.destroy event
+		event('cart.destroy');
+
+		$result = session()->put($this->instance, null);
+
+		// Fire the cart.destroyed event
+		event('cart.destroyed');
+
+		return $result;
+	}
+
+	/**
 	 * Get the CarCollection
 	 *
 	 * @return \Syscover\Shoppingcart\Libraries\CartCollection

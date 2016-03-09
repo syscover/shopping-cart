@@ -243,10 +243,28 @@ class CartProviderTest extends TestCase
         $this->expectsEvents('cart.destroyed');
 
         CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
-        CartProvider::destroy();
+        CartProvider::instance()->destroy();
 
         $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartCollection', CartProvider::instance()->content());
         $this->assertTrue(CartProvider::instance()->content()->isEmpty());
+    }
+
+    public function testCartCanDestroyOnlyOneInstance()
+    {
+        $this->expectsEvents('cart.add');
+        $this->expectsEvents('cart.added');
+        $this->expectsEvents('cart.destroy');
+        $this->expectsEvents('cart.destroyed');
+
+        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
+        CartProvider::instance('testing')->add('963bb', 'Product 2', 1, 19.90);
+        CartProvider::instance()->destroy();
+
+        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartCollection', CartProvider::instance()->content());
+        $this->assertTrue(CartProvider::instance()->content()->isEmpty());
+
+        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartCollection', CartProvider::instance('testing')->content());
+        $this->assertFalse(CartProvider::instance('testing')->content()->isEmpty());
     }
 
     public function testCartCanGetTotal()
