@@ -859,7 +859,7 @@ class Cart {
 			// discount by fixed amount
 			if($cartPriceRule->discount_type_120 == 3)
 			{
-				$cartPriceRule->amount = $cartPriceRule->discount_amount_120;
+				$cartPriceRule->amount = $cartPriceRule->discount_fixed_amount_120;
 			}
 
 			// check if there is any cartPriceRule with free shipping
