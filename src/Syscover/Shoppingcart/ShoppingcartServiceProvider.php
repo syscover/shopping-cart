@@ -14,7 +14,7 @@ class ShoppingcartServiceProvider extends ServiceProvider
 	{
 		// register tests
 		$this->publishes([
-			__DIR__ . '/../../tests/' 					=> base_path('/tests')
+			__DIR__ . '/../../tests/' => base_path('/tests')
 		], 'tests');
 	}
 
@@ -27,7 +27,7 @@ class ShoppingcartServiceProvider extends ServiceProvider
 	{
 		$this->app->bind('cartProvider', function($app)
 		{
-			return new CartProvider();
+			return new CartProvider($app);
 		});
 	}
 }
