@@ -26,7 +26,8 @@ Syscover\Shoppingcart\ShoppingcartServiceProvider::class,
 
 ```
 
-**To run laravel testing**
+**To run laravel testing**  
+
 publish testin files
 
 ```
