@@ -26,16 +26,20 @@ Syscover\Shoppingcart\ShoppingcartServiceProvider::class,
 
 ```
 
-**4 - To publish package and migrate**
+** To run laravel testing **
+publish testin files
 
-and execute composer update again:
 ```
-composer update
+php artisan vendor:publish --provider="Syscover\Shoppingcart\ShoppingcartServiceProvider"
+```
+
+and run the test using the following command:
+```
+phpunit tests/CartProviderTest
 ```
 
 
-
-The shoppingcart gives you the following methods to use:
+**The shoppingcart gives you the following methods to use:**
 
 CartProvider::instance()->add()
 ```
@@ -81,10 +85,6 @@ OR
 
 CartProvider::instance()->update($rowId, array('name' => 'Product 1'));
 
-Para hacer correr el testin, hay que usar el siguiente comando:
-```
-phpunit tests/CartProviderTest
-```
 
 CartProvider::instance()->remove()
 
