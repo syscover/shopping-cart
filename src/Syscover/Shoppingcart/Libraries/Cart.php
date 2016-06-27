@@ -854,7 +854,7 @@ class Cart {
 		foreach($cartPriceRuleCollection as &$cartPriceRule)
 		{
 			// discount by percentage
-			if($cartPriceRule->discount_type_120 == 2)
+			if($cartPriceRule->discount_type_id_120 == 2)
 			{
 				// check if discount is with shipping amount
 				if($cartPriceRule->apply_shipping_amount_120)
@@ -876,7 +876,7 @@ class Cart {
 			}
 
 			// discount by fixed amount
-			if($cartPriceRule->discount_type_120 == 3)
+			if($cartPriceRule->discount_type_id_120 == 3)
 			{
 				$cartPriceRule->discount_amount = $cartPriceRule->discount_fixed_amount_120;
 			}
