@@ -1,5 +1,6 @@
 <?php namespace Syscover\Shoppingcart\Libraries;
 
+use Closure;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartUnknownModelException;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidItemException;
 use Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidPriceException;
@@ -422,50 +423,26 @@ class Cart {
 	/**
 	 * Get the number of items in the cart
 	 *
-	 * @param  boolean  $totalItems  Get all the items (when false, will return the number of rows)
 	 * @return int
 	 */
-	public function count($totalItems = true)
+	public function count()
 	{
 		$cartCollection = $this->getCartCollection();
 
-		if( ! $totalItems)
-		{
-			return $cartCollection->count();
-		}
-
-		$count = 0;
-
-		foreach($cartCollection as $row)
-		{
-			$count += $row->qty;
-		}
-
-		return $count;
+		return $cartCollection->sum('qty');
 	}
 
-	/**
-	 * Search if the cart has a item
-	 *
-	 * @param  array  $search  An array with the item ID and optional options
-	 * @return array|boolean
-	 */
-	public function search(array $search)
-	{
-		if(empty($search)) return false;
-
-		foreach($this->getCartCollection() as $item)
-		{
-			$found = $item->search($search);
-
-			if($found)
-			{
-				$rows[] = $item->rowid;
-			}
-		}
-
-		return (empty($rows)) ? false : $rows;
-	}
+    /**
+     * Search the cart content for a cart item matching the given search closure.
+     *
+     * @param \Closure $search
+     * @return \Illuminate\Support\Collection
+     */
+    public function search(Closure $search)
+    {
+        $content = $this->getContent();
+        return $content->filter($search);
+    }
 
 	/**
 	 * Generate a unique id for the new row
@@ -781,11 +758,13 @@ class Cart {
 		}
 	}
 
-	/**
-	 * Get the DiscountCollection
-	 *
-	 * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
-	 */
+
+    /**
+     * Set the DiscountCollection
+     *
+     * @param \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection $cartPriceRuleCollection
+     * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
+     */
 	protected function setCartPriceRuleCollection($cartPriceRuleCollection)
 	{
 		$this->cartPriceRuleCollection = $cartPriceRuleCollection;
