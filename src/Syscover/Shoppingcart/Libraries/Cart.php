@@ -741,7 +741,7 @@ class Cart {
 	}
 
 	/**
-	 * set cart has any rule not combinable
+	 * set cart any rule not combinable
 	 *
 	 * @param 	boolean	$cartPriceRuleNotCombinable
 	 * @throws 	ShoppingcartInvalidDataTypeException
