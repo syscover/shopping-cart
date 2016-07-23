@@ -98,7 +98,7 @@ class Cart {
 		// Fire the cart.destroy event
 		event('cart.destroy');
 
-		$result = session()->put($this->instance, null);
+		$result = session()->remove($this->instance);
 
 		// Fire the cart.destroyed event
 		event('cart.destroyed');
@@ -165,7 +165,7 @@ class Cart {
 		{
 			// And if it's not only an array, but a multidimensional array, we need to
 			// recursively call the add function
-			if($this->is_multi($id))
+			if($this->isMulti($id))
 			{
 				// Fire the cart.batch event
 				event('cart.batch', $id);
@@ -451,7 +451,7 @@ class Cart {
 	 * @param  array   $options  Array of additional options, such as 'size' or 'color'
 	 * @return string
 	 */
-	protected function generateRowId($id, $options)
+	protected function generateRowId($id, array $options)
 	{
 		ksort($options);
 
@@ -569,15 +569,17 @@ class Cart {
 		return $this->updateRow($rowId, $attributes);
 	}
 
-	/**
-	 * Check if the array is a multidimensional array
-	 *
-	 * @param  array   $array  The array to check
-	 * @return boolean
-	 */
-	protected function is_multi(array $array)
+    /**
+     * Check if the item is a multidimensional array or an array of Buyables.
+     *
+     * @param   mixed $item
+     * @return  bool
+     */
+	protected function isMulti($item)
 	{
-		return is_array(head($array));
+        if ( ! is_array($item)) return false;
+
+		return is_array(head($item));
 	}
 
 	/**

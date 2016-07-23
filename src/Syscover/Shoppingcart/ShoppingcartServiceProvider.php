@@ -1,7 +1,6 @@
 <?php namespace Syscover\Shoppingcart;
 
 use Illuminate\Support\ServiceProvider;
-use Syscover\Shoppingcart\Libraries\CartProvider;
 
 class ShoppingcartServiceProvider extends ServiceProvider
 {
@@ -16,6 +15,11 @@ class ShoppingcartServiceProvider extends ServiceProvider
 		$this->publishes([
 			__DIR__ . '/../../tests/' => base_path('/tests')
 		], 'tests');
+
+        // register config files
+        $this->publishes([
+            __DIR__ . '/../../config/shoppingcart.php' 			=> config_path('shoppingcart.php')
+        ]);
 	}
 
 	/**
@@ -25,9 +29,6 @@ class ShoppingcartServiceProvider extends ServiceProvider
 	 */
 	public function register()
 	{
-		$this->app->bind('cartProvider', function($app)
-		{
-			return new CartProvider($app);
-		});
+		$this->app->bind('cartProvider', CartProvider::class);
 	}
 }

@@ -2,7 +2,9 @@
 
 use Syscover\Shoppingcart\Exceptions\ShoppingcartInstanceException;
 
-class CartProvider {
+class CartProvider
+{
+    const DEFAULT_INSTANCE = 'default';
 
 	/**
 	 * Current cart instance
@@ -18,7 +20,7 @@ class CartProvider {
 	 */
 	protected function getCart()
 	{
-		$content = (session()->has($this->getInstance())) ? session()->get($this->getInstance()) : new Cart($this->getInstance());
+		$content = (session()->has($this->instance)) ? session()->get($this->instance) : new Cart($this->instance);
 
 		return $content;
 	}
@@ -30,23 +32,13 @@ class CartProvider {
 	 * @return \Syscover\Shoppingcart\Libraries\Cart
 	 * @throws ShoppingcartInstanceException
 	 */
-	public function instance($instance = 'main')
+	public function instance($instance = null)
 	{
-		if(empty($instance)) throw new ShoppingcartInstanceException;
+        $instance = $instance ?: self::DEFAULT_INSTANCE;
 
-		$this->instance = $instance;
+		$this->instance = sprintf('%s.%s', 'cart', $instance);
 
 		// Return cart instance
 		return $this->getCart();
-	}
-
-	/**
-	 * Get the current cart instance
-	 *
-	 * @return string
-	 */
-	protected function getInstance()
-	{
-		return 'cart.' . $this->instance;
 	}
 }

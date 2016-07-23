@@ -44,16 +44,22 @@ phpunit tests/CartProviderTest
 
 Add row to cart
 ```
-// Basic form
-CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, array('size' => 'large'));
+// Basic form, without tax rules
+CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000, ['size' => 'large']);
+
+// Basic form, with tax rule
+CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000, [], ['name' => 'VAT', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 21.00]);
+
+// Basic form, with various tax rules
+CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000, [], [['name' => 'VAT', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 21.00], ['name' => 'VAT2', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 10.00]]);
 
 // Array form
-CartProvider::instance()->add(['id' => '293ad', 'name' => 'Product 1', 'qty' => 1, 'price' => 9.99, 'options' => ['size' => 'large']]);
+CartProvider::instance()->add(['id' => '293ad', 'name' => 'Product 1', 'qty' => 1, 'price' => 9.99, 'transportable' => true, 'weight' => 1.000, 'options' => ['size' => 'large']]);
 
 // Batch method
 CartProvider::instance()->add([
-  ['id' => '293ad', 'name' => 'Product 1', 'qty' => 1, 'price' => 10.00],
-  ['id' => '4832k', 'name' => 'Product 2', 'qty' => 1, 'price' => 10.00, 'options' => ['size' => 'large']]
+  ['id' => '293ad', 'name' => 'Product 1', 'qty' => 1, 'price' => 10.00, 'transportable' => true, 'weight' => 1.000],
+  ['id' => '4832k', 'name' => 'Product 2', 'qty' => 1, 'price' => 10.00, 'transportable' => true, 'weight' => 1.000, 'options' => ['size' => 'large']]
 ]);
 ```
 
@@ -150,7 +156,7 @@ The package also supports multiple instances of the cart. The way this works is 
 You can set the current instance of the cart with Cart::instance('newInstance'), at that moment, the active instance of the cart is newInstance, so when you add, remove or get the content of the cart, you work with the newInstance instance of the cart. 
 If you want to switch instances, you just call Cart::instance('otherInstance') again, and you're working with the otherInstance again.
 
-The default cart instance is called main, so when you're not using instances, Cart::instance()->content(); is the same as Cart::instance('main')->content().
+The default cart instance is called default, so when you're not using instances, Cart::instance()->content(); is the same as Cart::instance('default')->content().
 
 So a little example:
 ```
