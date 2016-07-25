@@ -173,15 +173,76 @@ class CartItem implements Arrayable
             }
             else
             {
-                $this->taxAmount = $this->subtotal * ($this->taxRules->sum('taxRate') / 100);
+                // calculate amounts of each taxRule
+                $taxRules       = $this->taxRules->sortBy('priority');
+                $lastPriority   = 0;
+                $baseAux        = $this->subtotal;
+                foreach ($taxRules as $taxRule)
+                {
+                    if($lastPriority == $taxRule->priority)
+                    {
+                        $taxRule->taxAmount = $baseAux * ($taxRule->taxRate / 100);
+                    }
+                    else
+                    {
+                        $lastPriority = $taxRule->priority;
+
+                        // if is a different priority, calculate tax over subtotal plus previous tax amounts
+                        $baseAux            += $taxRules->sum('taxAmount');
+                        $taxRule->taxAmount = $baseAux * ($taxRule->taxRate / 100);
+                    }
+                }
+
+                // set total tax from this car item
+                $this->taxAmount = $this->taxRules->sum('taxAmount');
             }
             $this->total = $this->subtotal + $this->taxAmount;
         }
         elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
         {
-            $this->subtotal     = (($this->qty * $this->price) * 100) / ($this->taxRules->sum('taxRate') + 100);
-            $this->taxAmount    = (($this->qty * $this->price) * $this->taxRules->sum('taxRate')) / ($this->taxRules->sum('taxRate') + 100);
-            $this->total        = $this->qty * $this->price;
+
+            $taxRules       = $this->taxRules->sortByDesc('priority');
+            $lastPriority   = null;
+            $this->total    = $this->qty * $this->price;
+            $totalAux       = $this->total;
+            $taxRateAux     = 0;
+            $taxAmountAux   = 0;
+
+            foreach ($taxRules as $taxRule)
+            {
+                if($lastPriority === null || $lastPriority != $taxRule->priority)
+                {
+                    $lastPriority = $taxRule->priority;
+                    $totalAux     -= $taxAmountAux;
+                }
+
+                $taxRateAux         = $taxRules->where('priority', $taxRule->priority)->sum('taxRate');
+                $taxAmountAux       = ($taxRateAux * $totalAux) / ($taxRateAux + 100);
+                $taxRule->taxAmount = ($taxAmountAux * $taxRule->taxRate) / $taxRateAux;
+
+
+//                if($lastPriority == $taxRule->priority)
+//                {
+//
+//                }
+//                else
+//                {
+//                    $totalAux           -= $taxAmountAux;
+//
+//
+//                    $lastPriority       = $taxRule->priority;
+//                    $taxRule->taxAmount = ($this->total * 100) / ($this->taxRules->sum('taxRate') + 100);
+//                    $base               = $this->total - $taxRule->taxAmount;
+//                }
+            }
+
+            $this->taxAmount = $taxRules->sum('taxAmount');
+            $this->subtotal = $this->total - $this->taxAmount;
+
+
+            //$this->subtotal     = (($this->qty * $this->price) * 100) / ($this->taxRules->sum('taxRate') + 100);
+            //$this->taxAmount    = (($this->qty * $this->price) * $this->taxRules->sum('taxRate')) / ($this->taxRules->sum('taxRate') + 100);
+
         }
     }
 

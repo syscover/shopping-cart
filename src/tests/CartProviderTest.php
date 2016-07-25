@@ -55,14 +55,18 @@ class CartProviderTest extends TestCase
         if(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX)
         {
             $this->assertEquals('110,99', CartProvider::instance()->content()->first()->getSubtotal());
+            $this->assertEquals(110.99, CartProvider::instance()->content()->first()->subtotal);
             $this->assertEquals('34,41', CartProvider::instance()->content()->first()->getTaxAmount());
             $this->assertEquals('145,40', CartProvider::instance()->content()->first()->getTotal());
+            $this->assertEquals(145.396899999999988040144671685993671417236328125, CartProvider::instance()->content()->first()->total);
         }
         elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
         {
             $this->assertEquals('84,73', CartProvider::instance()->content()->first()->getSubtotal());
+            $this->assertEquals(84.7251908396946618040601606480777263641357421875, CartProvider::instance()->content()->first()->subtotal);
             $this->assertEquals('26,26', CartProvider::instance()->content()->first()->getTaxAmount());
             $this->assertEquals('110,99', CartProvider::instance()->content()->first()->getTotal());
+            $this->assertEquals(110.99, CartProvider::instance()->content()->first()->total);
         }
     }
 

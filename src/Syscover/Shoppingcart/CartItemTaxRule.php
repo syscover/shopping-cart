@@ -40,6 +40,13 @@ class CartItemTaxRule extends Collection
     public $taxRate;
 
     /**
+     * Amount of this taxRule.
+     *
+     * @var \float
+     */
+    public $taxAmount;
+
+    /**
      * CartItemTaxRule constructor.
      *
      * @param string $name
@@ -62,7 +69,7 @@ class CartItemTaxRule extends Collection
             throw new \InvalidArgumentException('Please supply a valid taxRate.');
 
 
-        $this->id           = $this->generateId($name);
+        $this->id           = $this->generateId($name, $priority);
         $this->name         = $name;
         $this->priority     = $priority;
         $this->sortOrder    = $sortOrder;
@@ -84,13 +91,39 @@ class CartItemTaxRule extends Collection
     }
 
     /**
+     * Returns the formatted sum tax rate.
+     *
+     * @param int       $decimals
+     * @param string    $decimalPoint
+     * @param string    $thousandSeperator
+     * @return string
+     */
+    public function getTaxRate($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->taxRate, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Returns the formatted sum tax rate.
+     *
+     * @param int       $decimals
+     * @param string    $decimalPoint
+     * @param string    $thousandSeperator
+     * @return string
+     */
+    public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->taxAmount, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
      * Generate a unique id for the cart item.
      *
      * @param string $name
      * @return string
      */
-    protected function generateId($name)
+    protected function generateId($name, $priority)
     {
-        return md5($name);
+        return md5($name . $priority);
     }
 }

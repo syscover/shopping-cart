@@ -174,6 +174,103 @@ class Cart
     }
 
     /**
+     * Magic method to make accessing the total, tax and subtotal properties possible.
+     *
+     * @param   string $attribute
+     * @return  float|null
+     */
+    public function __get($attribute)
+    {
+        if($attribute === 'total') {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($total, CartItem $cartItem) {
+                return $total + $cartItem->total;
+            }, 0);
+        }
+        if($attribute === 'taxAmount') {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($taxAmount, CartItem $cartItem) {
+                return $taxAmount + $cartItem->taxAmount;
+            }, 0);
+        }
+        if($attribute === 'subtotal')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($subTotal, CartItem $cartItem) {
+                return $subTotal + $cartItem->subtotal;
+            }, 0);
+        }
+        return null;
+    }
+
+    /**
+     * Get the subtotal formated of the items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getSubtotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->subtotal, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the taxAmount formated of the items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->taxAmount, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the subtotal formated of the items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getTotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->total, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+
+    /**
+     * Get Array with tax rules objects
+     *
+     * @return array
+     */
+    public function getTaxRules()
+    {
+        $cartItems              = $this->cartItems;
+        $taxRulesShoppingCart   = [];
+        foreach ($cartItems as $cartItem)
+        {
+           foreach ($cartItem->taxRules as $taxRule)
+           {
+               if(isset($taxRulesShoppingCart[$taxRule->id]))
+               {
+                   $taxRulesShoppingCart[$taxRule->id]->taxAmount += $taxRule->taxAmount;
+               }
+               else
+               {
+                   $taxRulesShoppingCart[$taxRule->id] = $taxRule;
+               }
+           }
+        }
+
+        return $taxRulesShoppingCart;
+    }
+
+    /**
      * Get a row of the cart by ID
      *
      * @param   string  $rowId  The ID of the row to fetch
@@ -347,28 +444,6 @@ class Cart
 
 
 
-	/**
-	 * Get the price subtotal, sum of all rows except transport
-	 *
-	 * @return float
-	 */
-	public function subtotal()
-	{
-		$total 		= 0;
-		$cartItems  = $this->cartItems;
-
-		if(empty($cartItems))
-		{
-			return $total;
-		}
-
-		foreach($cartItems as $cartItem)
-		{
-			$total += $cartItem->subtotal;
-		}
-
-		return $total;
-	}
 
 	/**
 	 * @return float
@@ -475,57 +550,9 @@ class Cart
 		return $cartItems;
 	}
 
-	/**
-	 * Create a new row Object
-	 *
-	 * @param  string  $rowId    The ID of the new row
-	 * @param  string  $id       Unique ID of the item
-	 * @param  string  $name     Name of the item
-	 * @param  int     $qty      Item qty to add to the cart
-	 * @param  float   $price    Price of one item
-	 * @param  array   $options  Array of additional options, such as 'size' or 'color'
-	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
-	 */
-	protected function createRow($rowId, $id, $name, $qty, $price, $options)
-	{
-		$cartItems = $this->cartItems;
 
-		$newRow = new CartRowCollection([
-			'rowid' 	=> $rowId,
-			'id' 		=> $id,
-			'name' 		=> $name,
-			'qty' 		=> $qty,
-			'price' 	=> $price,
-			'options' 	=> new CartRowOptionsCollection($options),
-			'subtotal' 	=> $qty * $price,
 
-			// para implementar
-			'tax'		=> null,
-			'total'		=> null,
-			'discount'	=> null,
-		]);
 
-		$cartItems->put($rowId, $newRow);
-
-		return $cartItems;
-	}
-
-	/**
-	 * Update the quantity of a row
-	 *
-	 * @param  string  $rowId  The ID of the row
-	 * @param  int     $qty    The qty to add
-	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
-	 */
-	protected function updateQty($rowId, $qty)
-	{
-		if($qty <= 0)
-		{
-			return $this->remove($rowId);
-		}
-
-		return $this->updateRow($rowId, ['qty' => $qty]);
-	}
 
 	/**
 	 * Update an attribute of the row
