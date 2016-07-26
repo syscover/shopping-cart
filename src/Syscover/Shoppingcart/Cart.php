@@ -246,27 +246,28 @@ class Cart
     /**
      * Get Array with tax rules objects
      *
-     * @return array
+     * @return \Illuminate\Support\Collection
      */
     public function getTaxRules()
     {
         $cartItems              = $this->cartItems;
-        $taxRulesShoppingCart   = [];
+        $taxRulesShoppingCart   = collect();
         foreach ($cartItems as $cartItem)
         {
            foreach ($cartItem->taxRules as $taxRule)
            {
-               if(isset($taxRulesShoppingCart[$taxRule->id]))
+               if($taxRulesShoppingCart->has($taxRule->id))
                {
-                   $taxRulesShoppingCart[$taxRule->id]->taxAmount += $taxRule->taxAmount;
+                   // if find any tax with the same ID, sum yours rates
+                   $taxRulesShoppingCart->get($taxRule->id)->taxAmount += $taxRule->taxAmount;
                }
                else
                {
-                   $taxRulesShoppingCart[$taxRule->id] = $taxRule;
+                   // add new tax rule
+                   $taxRulesShoppingCart->put($taxRule->id, $taxRule);
                }
            }
         }
-
         return $taxRulesShoppingCart;
     }
 
@@ -367,7 +368,6 @@ class Cart
             $cartItem->setQuantity($qty);
         }
 
-        //$cartItem->setTaxRate(config('cart.tax'));
         return $cartItem;
     }
 

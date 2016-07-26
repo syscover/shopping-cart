@@ -98,7 +98,7 @@ class CartItemTaxRule extends Collection
      * @param string    $thousandSeperator
      * @return string
      */
-    public function getTaxRate($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getTaxRate($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
     {
         return number_format($this->taxRate, $decimals, $decimalPoint, $thousandSeperator);
     }
