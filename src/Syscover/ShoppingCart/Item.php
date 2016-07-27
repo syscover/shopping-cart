@@ -103,6 +103,13 @@ class Item implements Arrayable
     private $discountPercentage = 0;
 
     /**
+     * Discount amount if discount type is DISCOUNT_FIXED_AMOUNT_SUBTOTAL
+     *
+     * @var float
+     */
+    public $discountFixed = 0;
+
+    /**
      * The discount amount over this item.
      *
      * @var int|float
@@ -121,7 +128,6 @@ class Item implements Arrayable
      * @param array|\Syscover\ShoppingCart\TaxRule  $taxRule
      * @param array                                 $options
      */
-
     public function __construct($id, $name, $quantity, $price, $weight = 1.000, $transportable = true, $taxRule = [], array $options = [])
     {
         if(empty($id))
@@ -157,6 +163,22 @@ class Item implements Arrayable
     }
 
     /**
+     * magic method to make accessing the total, tax and subtotal properties
+     *
+     * @param   string $attribute
+     * @return  float|null
+     */
+    public function __get($attribute)
+    {
+        if($attribute === 'discountAmount')
+        {
+            return $this->discountAmount;
+        }
+
+        return null;
+    }
+
+    /**
      * Returns the formatted unit price.
      *
      * @param int       $decimals
@@ -183,6 +205,20 @@ class Item implements Arrayable
     }
 
     /**
+     * Returns the formatted subtotal.
+     * Subtotal is price for whole CartItem without TAX
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  string
+     */
+    public function getSubtotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->subtotal, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
      * Returns the formatted tax amount.
      *
      * @param int       $decimals
@@ -204,9 +240,9 @@ class Item implements Arrayable
      * @param   string  $thousandSeperator
      * @return  string
      */
-    public function getSubtotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
-        return number_format($this->subtotal, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
@@ -250,6 +286,7 @@ class Item implements Arrayable
      * Set the quantity for this cart item.
      *
      * @param int|float $quantity
+     * @return  $this
      */
     public function setQuantity($quantity)
     {
@@ -258,6 +295,8 @@ class Item implements Arrayable
 
         $this->quantity = $quantity;
         $this->calculateAmounts();
+
+        return $this;
     }
 
     /**
@@ -273,15 +312,20 @@ class Item implements Arrayable
     /**
      * Set the discount percentage over this cart item.
      *
-     * @param int|float $discountPercentage
+     * @param   int|float $discountPercentage
+     * @return  $this
      */
     public function setDiscountPercentage($discountPercentage)
     {
         if($discountPercentage !== 0 && (empty($discountPercentage) || ! is_numeric($discountPercentage)))
-            throw new \InvalidArgumentException('Please supply a valid discount percentaje.');
+            throw new \InvalidArgumentException('Please supply a valid discount percentage.');
 
-        $this->discountPercentage = $discountPercentage;
+        // sum percentage
+        $this->discountPercentage = (float) $discountPercentage;
+
         $this->calculateAmounts();
+
+        return $this;
     }
 
     /**
@@ -298,37 +342,7 @@ class Item implements Arrayable
             if($this->discountPercentage > 0)
                 $this->discountAmount = ($this->subtotal * $this->discountPercentage) / 100;
 
-            if($this->taxRules === null || $this->taxRules->count() == 0)
-            {
-                $this->taxAmount = 0;
-            }
-            else
-            {
-                // calculate amounts of each taxRule
-                $taxRules           = $this->taxRules->sortBy('priority');
-                $lastPriority       = 0;
-                $baseToCalculate    = $this->subtotal - $this->discountAmount;
-                foreach ($taxRules as $taxRule)
-                {
-                    if($lastPriority == $taxRule->priority)
-                    {
-                        $taxRule->taxAmount = $baseToCalculate * ($taxRule->taxRate / 100);
-                    }
-                    else
-                    {
-                        $lastPriority = $taxRule->priority;
-
-                        // if is a different priority, calculate tax over subtotal plus previous tax amounts
-                        $baseToCalculate    += $taxRules->sum('taxAmount');
-                        $taxRule->taxAmount = $baseToCalculate * ($taxRule->taxRate / 100);
-                    }
-                }
-
-                // set total tax from this car item
-                $this->taxAmount = $this->taxRules->sum('taxAmount');
-            }
-
-            $this->total = ($this->subtotal - $this->discountAmount) + $this->taxAmount;
+            $this->calculateAmountsWithPriceWithoutTax();
         }
         elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
         {
@@ -354,7 +368,50 @@ class Item implements Arrayable
 
             $this->taxAmount    = $taxRules->sum('taxAmount');
             $this->subtotal     = $this->total - $this->taxAmount;
+
+            // calculate discount amount if has discount percentage
+            if($this->discountPercentage > 0)
+            {
+                $this->discountAmount = ($this->subtotal * $this->discountPercentage) / 100;
+
+                $this->calculateAmountsWithPriceWithoutTax();
+            }
         }
+    }
+
+    private function calculateAmountsWithPriceWithoutTax()
+    {
+        if($this->taxRules === null || $this->taxRules->count() == 0)
+        {
+            $this->taxAmount = 0;
+        }
+        else
+        {
+            // calculate amounts of each taxRule
+            $taxRules           = $this->taxRules->sortBy('priority');
+            $lastPriority       = 0;
+            $baseToCalculate    = $this->subtotal - $this->discountAmount;
+            foreach ($taxRules as $taxRule)
+            {
+                if($lastPriority == $taxRule->priority)
+                {
+                    $taxRule->taxAmount = $baseToCalculate * ($taxRule->taxRate / 100);
+                }
+                else
+                {
+                    $lastPriority = $taxRule->priority;
+
+                    // if is a different priority, calculate tax over subtotal plus previous tax amounts
+                    $baseToCalculate    += $taxRules->sum('taxAmount');
+                    $taxRule->taxAmount = $baseToCalculate * ($taxRule->taxRate / 100);
+                }
+            }
+
+            // set total tax from this car item
+            $this->taxAmount = $this->taxRules->sum('taxAmount');
+        }
+
+        $this->total = ($this->subtotal - $this->discountAmount) + $this->taxAmount;
     }
 
     /**

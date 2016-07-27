@@ -83,9 +83,6 @@ class Cart
      */
     private function storeCartInstance()
     {
-        // before set session, update amounts from cartPriceRulesContent
-        //$this->updateAmountsCartPriceRuleCollection();
-
         session()->put($this->instance, $this);
     }
 
@@ -134,14 +131,23 @@ class Cart
 
         // increment quantity if exist a product with de same rowId
         if($this->cartItems->has($cartItem->rowId))
-            $cartItem->setQuantity($cartItem->getQuantity() + $this->cartItems->get($cartItem->rowId)->getQuantity());
+        {
+            $this->cartItems->get($cartItem->rowId)->setQuantity($cartItem->getQuantity() + $this->cartItems->get($cartItem->rowId)->getQuantity());
+        }
+        else
+        {
+            // add cartItem
+            $this->cartItems->put($cartItem->rowId, $cartItem);
 
-        // add or overwrite cartItem if exist inside of cartItems
-        $this->cartItems->put($cartItem->rowId, $cartItem);
+            // recalculate all rules
+            $this->applyCartPricesRulesToCartItem($cartItem->rowId);
+            $this->updateCartDiscounts();
+        }
 
         event('cart.added', $cartItem);
 
-        $this->storeCartInstance();
+        if(! session()->has($this->instance))
+            $this->storeCartInstance();
 
         return $cartItem;
     }
@@ -158,8 +164,6 @@ class Cart
         // delete object with all data to add new object later
         $this->cartItems->pull($rowId);
         $this->cartItems->put($item->rowId, $item);
-
-        $this->storeCartInstance();
     }
 
     /**
@@ -185,10 +189,6 @@ class Cart
         {
             $this->destroy();
         }
-        else
-        {
-            $this->storeCartInstance();
-        }
     }
 
     /**
@@ -201,12 +201,9 @@ class Cart
     {
         if($attribute === 'total') {
             $cartItems = $this->cartItems;
-            $total = $cartItems->reduce(function ($total, Item $item) {
+            return $cartItems->reduce(function ($total, Item $item) {
                 return $total + $item->total;
             }, 0);
-
-            // apply discount
-            return $total - $this->discount <= 0? 0 : $total - $this->discount;
         }
         if($attribute === 'taxAmount') {
             $cartItems = $this->cartItems;
@@ -221,11 +218,11 @@ class Cart
                 return $subTotal + $item->subtotal;
             }, 0);
         }
-        if($attribute === 'discount')
+        if($attribute === 'discountAmount')
         {
-            $cartPriceRules = $this->cartPriceRules;
-            return $cartPriceRules->reduce(function ($discount, PriceRule $priceRule) {
-                return $discount + $priceRule->discountAmount;
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($discountAmount, Item $item) {
+                return $discountAmount + $item->discountAmount;
             }, 0);
         }
 
@@ -256,6 +253,19 @@ class Cart
     public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
         return number_format($this->taxAmount, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the taxAmount formated of the items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
@@ -297,11 +307,6 @@ class Cart
     }
 
     /**
-     * Get the number of items in the cart
-     *
-     * @return float
-     */
-    /**
      * Set the number of items of a item cart
      *
      * @param int|string    $rowId
@@ -310,6 +315,8 @@ class Cart
     public function setQuantity($rowId, $quantity)
     {
         $this->cartItems->get($rowId)->setQuantity($quantity);
+
+        $this->updateCartDiscounts();
 
         // if quantity is less than zere, remove item
         if ($this->cartItems->get($rowId)->getQuantity() <= 0)
@@ -349,6 +356,16 @@ class Cart
     }
 
     /**
+     * Get Array with price rules objects
+     *
+     * @return \Syscover\ShoppingCart\CartPriceRules
+     */
+    public function getPriceRules()
+    {
+        return $this->cartPriceRules;
+    }
+
+    /**
      * Search inside carItems a cartItem, matching the given search closure.
      *
      * @param   \Closure $search
@@ -371,15 +388,15 @@ class Cart
         if($this->cartPriceRules->has($priceRule->id))
         {
             // error, este descuento ya existe en el carro
+            dd('cupon ya existe');
         }
         else
         {
             // add object to cart price rules
             $this->cartPriceRules->put($priceRule->id, $priceRule);
 
-            $this->updateDiscountAmounts();
-
-            $this->storeCartInstance();
+            $this->applyCartPriceRuleToCartItems($priceRule);
+            $this->updateCartDiscounts();
         }
     }
 
@@ -389,7 +406,7 @@ class Cart
      *
      * @return void
      */
-    private function updateDiscountAmounts()
+    private function updateCartDiscounts()
     {
         // reset discounts cart paramenters
         $this->hasCartPriceRuleNotCombinable    = false;
@@ -400,14 +417,6 @@ class Cart
             // discount by percentage
             if($cartPriceRule->discountType == PriceRule::DISCOUNT_PERCENTAGE_SUBTOTAL)
             {
-                $this->cartItems->transform(function ($item, $key) use ($cartPriceRule) {
-                    // to set discount percentage, we calculate all amounts too
-                    return $item->setDiscountPercentage($cartPriceRule->discountPercentage);
-                });
-
-
-
-
                 // check if discount is with shipping amount
                 if($cartPriceRule->applyShippingAmount && $this->hasShipping && ! $this->hasFreeShipping)
                 {
@@ -418,11 +427,17 @@ class Cart
                     $discountAmount = ($this->subtotal * $cartPriceRule->discountPercentage) / 100;
                 }
 
+
+
+
                 // check if discount is lower that maximum discount allowed
                 if($cartPriceRule->maximumDiscountAmount != null && $discountAmount > $cartPriceRule->maximumDiscountAmount)
                 {
                     $discountAmount = $cartPriceRule->maximumDiscountAmount;
                 }
+
+
+
 
                 $cartPriceRule->discountAmount = $discountAmount;
             }
@@ -443,6 +458,41 @@ class Cart
         }
     }
 
+    /**
+     * Implement PriceRule in all cartItems
+     *
+     * @param   \Syscover\ShoppingCart\PriceRule    $priceRule
+     * @return  void
+     */
+    private function applyCartPriceRuleToCartItems(PriceRule $priceRule)
+    {
+        // discount by percentage
+        if($priceRule->discountType == PriceRule::DISCOUNT_PERCENTAGE_SUBTOTAL)
+        {
+            $this->cartItems->transform(function ($item, $key) use ($priceRule) {
+                // to set discount percentage, we calculate all amounts too
+                return $item->setDiscountPercentage($priceRule->discountPercentage + $item->getDiscountPercentage());
+            });
+        }
+    }
+
+    /**
+     * Implement all PriceRules in one cartItem
+     *
+     * @return void
+     */
+    private function applyCartPricesRulesToCartItem($rowId)
+    {
+        foreach($this->cartPriceRules as $cartPriceRule)
+        {
+            // discount by percentage
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_PERCENTAGE_SUBTOTAL)
+            {
+                $this->cartItems->get($rowId)->setDiscountPercentage($cartPriceRule->discountPercentage);
+            }
+        }
+    }
+
 
 
 
@@ -456,116 +506,109 @@ class Cart
 
     ////////////////////////////////////////////////////
 
-	/**
-	 * Get the price total, include shipping amount
-	 *
-	 * @return float
-	 */
-	public function total()
-	{
-		$total 			= 0;
-		$cartItems = $this->cartItems;
-
-		if(empty($cartItems))
-		{
-			return $total;
-		}
-
-		foreach($cartItems as $row)
-		{
-			$total += $row->subtotal;
-		}
-
-		// check that, don't have free shipping
-		if( ! $this->hasFreeShipping())
-		{
-			// sum shipping amount
-			$total += $this->getShippingAmount();
-		}
-
-		$total -= $this->discount();
-
-		return $total;
-	}
-
-
-	/**
-	 * return shipping amount
-	 *
-	 * @return integer
-	 */
-	public function getShippingAmount()
-	{
-		if(isset($this->shippingAmount))
-			return $this->shippingAmount;
-		else
-			return 0;
-	}
-
-	/**
-	 * set shipping amount
-	 *
-	 * @return void
-	 */
-	public function setShippingAmount($shippingAmount)
-	{
-		$this->shippingAmount = $shippingAmount;
-		$this->storeCartInstance();
-	}
-
-	/**
-	 * check if cart has products to shipping
-	 *
-	 * @return boolean | void
-	 */
-	public function hasShipping()
-	{
-		return $this->shipping;
-	}
-
-	/**
-	 * set cart has products to shipping
-	 *
-	 * @param  boolean		$shipping
-	 * @throws ShoppingcartInvalidDataTypeException
-	 */
-	public function setShipping($shipping)
-	{
-		if(is_bool($shipping))
-		{
-			$this->shipping = $shipping;
-			$this->storeCartInstance();
-		}
-		else
-		{
-			throw new ShoppingcartInvalidDataTypeException;
-		}
-	}
-
-
-
-
-
-	/**
-	 * get rule not combinable from cart, there can only be one
-	 *
-	 * @return mixed|null
-	 */
-	public function getCartPriceRuleNotCombinable()
-	{
-		$cartPriceRulesContent = $this->getCartPriceRuleCollection();
-
-		foreach($cartPriceRulesContent as $cartPriceRule)
-		{
-			if($cartPriceRule->combinable_120 == false)
-			{
-				return $cartPriceRule;
-			}
-		}
-		return null;
-	}
-
-
-
-
+//	/**
+//	 * Get the price total, include shipping amount
+//	 *
+//	 * @return float
+//	 */
+//	public function total()
+//	{
+//		$total 			= 0;
+//		$cartItems = $this->cartItems;
+//
+//		if(empty($cartItems))
+//		{
+//			return $total;
+//		}
+//
+//		foreach($cartItems as $row)
+//		{
+//			$total += $row->subtotal;
+//		}
+//
+//		// check that, don't have free shipping
+//		if( ! $this->hasFreeShipping())
+//		{
+//			// sum shipping amount
+//			$total += $this->getShippingAmount();
+//		}
+//
+//		$total -= $this->discount();
+//
+//		return $total;
+//	}
+//
+//
+//	/**
+//	 * return shipping amount
+//	 *
+//	 * @return integer
+//	 */
+//	public function getShippingAmount()
+//	{
+//		if(isset($this->shippingAmount))
+//			return $this->shippingAmount;
+//		else
+//			return 0;
+//	}
+//
+//	/**
+//	 * set shipping amount
+//	 *
+//	 * @return void
+//	 */
+//	public function setShippingAmount($shippingAmount)
+//	{
+//		$this->shippingAmount = $shippingAmount;
+//		$this->storeCartInstance();
+//	}
+//
+//	/**
+//	 * check if cart has products to shipping
+//	 *
+//	 * @return boolean | void
+//	 */
+//	public function hasShipping()
+//	{
+//		return $this->shipping;
+//	}
+//
+//	/**
+//	 * set cart has products to shipping
+//	 *
+//	 * @param  boolean		$shipping
+//	 * @throws ShoppingcartInvalidDataTypeException
+//	 */
+//	public function setShipping($shipping)
+//	{
+//		if(is_bool($shipping))
+//		{
+//			$this->shipping = $shipping;
+//			$this->storeCartInstance();
+//		}
+//		else
+//		{
+//			throw new ShoppingcartInvalidDataTypeException;
+//		}
+//	}
+//
+//
+//	/**
+//	 * get rule not combinable from cart, there can only be one
+//	 *
+//	 * @return mixed|null
+//	 */
+//	public function getCartPriceRuleNotCombinable()
+//	{
+//		$cartPriceRulesContent = $this->getCartPriceRuleCollection();
+//
+//		foreach($cartPriceRulesContent as $cartPriceRule)
+//		{
+//			if($cartPriceRule->combinable_120 == false)
+//			{
+//				return $cartPriceRule;
+//			}
+//		}
+//		return null;
+//	}
 }

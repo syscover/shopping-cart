@@ -144,8 +144,21 @@ class PriceRule
      * @param string    $thousandSeperator
      * @return string
      */
-    public function getDiscountAmount($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
         return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Returns the formatted sum tax rate.
+     *
+     * @param int       $decimals
+     * @param string    $decimalPoint
+     * @param string    $thousandSeperator
+     * @return string
+     */
+    public function getDiscountPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->discountPercentage, $decimals, $decimalPoint, $thousandSeperator);
     }
 }
