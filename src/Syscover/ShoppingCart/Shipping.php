@@ -1,8 +1,8 @@
-<?php namespace Syscover\Shoppingcart;
+<?php namespace Syscover\ShoppingCart;
 
 use Illuminate\Contracts\Support\Arrayable;
 
-class CartShipping implements Arrayable
+class Shipping implements Arrayable
 {
     /**
      * Shipping amount

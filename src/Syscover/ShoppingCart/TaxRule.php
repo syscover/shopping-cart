@@ -1,8 +1,6 @@
-<?php namespace Syscover\Shoppingcart;
+<?php namespace Syscover\ShoppingCart;
 
-use Illuminate\Support\Collection;
-
-class CartItemTaxRule extends Collection
+class TaxRule
 {
     /**
      * id tax rule
@@ -54,7 +52,7 @@ class CartItemTaxRule extends Collection
      * @param int $sortOrder
      * @param float $taxRate
      */
-    public function __construct($name, $priority, $sortOrder, $taxRate)
+    public function __construct($name, $taxRate, $priority = 0, $sortOrder = 0)
     {
         if (empty($name))
             throw new \InvalidArgumentException('Please supply a valid name.');

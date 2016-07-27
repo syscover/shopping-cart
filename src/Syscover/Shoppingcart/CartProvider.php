@@ -1,6 +1,4 @@
-<?php namespace Syscover\Shoppingcart;
-
-use Syscover\Shoppingcart\Exceptions\ShoppingcartInstanceException;
+<?php namespace Syscover\ShoppingCart;
 
 class CartProvider
 {
@@ -14,9 +12,9 @@ class CartProvider
 	protected $instance;
 
 	/**
-	 * Get the carts content, if there is no cart content set yet, return a new empty Collection
+	 * Get the Cart object, if there is no Cart object set yet, return a new Cart object
 	 *
-	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
+	 * @return \Syscover\ShoppingCart\Cart
 	 */
 	protected function getCart()
 	{
@@ -28,9 +26,8 @@ class CartProvider
 	/**
 	 * Set the current cart instance
 	 *
-	 * @param  string  $instance  Cart instance name
-	 * @return \Syscover\Shoppingcart\Libraries\Cart
-	 * @throws ShoppingcartInstanceException
+	 * @param   string                                  $instance  Cart instance name
+	 * @return  \Syscover\ShoppingCart\Cart
 	 */
 	public function instance($instance = null)
 	{

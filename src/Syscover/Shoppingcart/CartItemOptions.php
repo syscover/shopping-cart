@@ -1,4 +1,4 @@
-<?php namespace Syscover\Shoppingcart;
+<?php namespace Syscover\ShoppingCart;
 
 use Illuminate\Support\Collection;
 

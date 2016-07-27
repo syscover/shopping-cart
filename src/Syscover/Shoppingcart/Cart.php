@@ -1,12 +1,11 @@
-<?php namespace Syscover\Shoppingcart;
+<?php namespace Syscover\ShoppingCart;
 
 use Closure;
-use Syscover\Shoppingcart\Exceptions\InvalidRowIDException;
 
 class Cart 
 {
-    const PRICE_WITHOUT_TAX = '1';
-    const PRICE_WITH_TAX    = '2';
+    const PRICE_WITHOUT_TAX = 1;
+    const PRICE_WITH_TAX    = 2;
 
 	/**
 	 * Current cart instance
@@ -16,18 +15,39 @@ class Cart
 	protected $instance;
 
 	/**
-	 * cart content items
+	 * object that contain all cart items
 	 *
-	 * @var \Syscover\Shoppingcart\CartItems
+	 * @var \Syscover\ShoppingCart\CartItems
 	 */
 	protected $cartItems;
 
 	/**
 	 * all discounts applied to cart
 	 *
-	 * @var \Syscover\Shoppingcart\CartPriceRules
+	 * @var \Syscover\ShoppingCart\CartPriceRules
 	 */
 	protected $cartPriceRules;
+
+    /**
+     * check if inside $cartPriceRulesContent has a not combinable rule.
+     *
+     * @var boolean
+     */
+    protected $hasCartPriceRuleNotCombinable;
+
+    /**
+     * check if cart has free shipping
+     *
+     * @var boolean
+     */
+    protected $hasFreeShipping;
+
+    /**
+     * check if cart has shipping products
+     *
+     * @var boolean
+     */
+    protected $hasShipping;
 
 	/**
 	 * shipping amount
@@ -35,27 +55,6 @@ class Cart
 	 * @var double
 	 */
 	protected $shippingAmount;
-
-	/**
-	 * check if cart has shipping products
-	 *
-	 * @var boolean
-	 */
-	protected $shipping;
-
-	/**
-	 * check if cart has free shipping
-	 *
-	 * @var boolean
-	 */
-	protected $freeShipping;
-
-	/**
-	 * check if inside $cartPriceRulesContent have a not combinable rule.
-	 *
-	 * @var boolean
-	 */
-	protected $cartPriceRuleNotCombinable;
 
 
 	/**
@@ -65,16 +64,16 @@ class Cart
 	 */
 	public function __construct($instance)
 	{
-		$this->instance 					= $instance;
-		$this->cartItems 			        = new CartItems();
-		$this->cartPriceRulesContent 		= new CartPriceRules();
+		$this->instance 					    = $instance;
+		$this->cartItems 			            = new CartItems();
+		$this->cartPriceRules 		            = new CartPriceRules();
+        $this->hasCartPriceRuleNotCombinable 	= false;
 
 
 
-		$this->freeShipping					= false;
-		$this->shippingAmount				= 0;
-		$this->shipping						= false;
-		$this->cartPriceRuleNotCombinable	= false;
+		//$this->freeShipping					= false;
+		//$this->shippingAmount				    = 0;
+		//$this->shipping						= false;
 	}
 
     /**
@@ -82,99 +81,118 @@ class Cart
      *
      * @return void
      */
-    private function setCart()
+    private function storeCartInstance()
     {
         // before set session, update amounts from cartPriceRulesContent
-        $this->updateAmountsCartPriceRuleCollection();
+        //$this->updateAmountsCartPriceRuleCollection();
 
         session()->put($this->instance, $this);
     }
 
     /**
-     * set CartItems Collection and instance in session Cart object
+     * Destroy cart instance
      *
-     * @param  \Syscover\Shoppingcart\CartItems  $cartItems  The new cart content
-     * @return \Syscover\Shoppingcart\CartItems
+     * @return boolean
      */
-    protected function setCartItems($cartItems)
+    public function destroy()
     {
-        $this->cartItems = $cartItems;
+        // fire the cart.destroy event
+        event('cart.destroy');
 
-        // save current changes
-        $this->setCart();
+        $response = session()->remove($this->instance);
 
-        return $this->cartItems;
+        // fire the cart.destroyed event
+        event('cart.destroyed');
+
+        return $response;
     }
 
     /**
      * Get the cart items
      *
-     * @return \Syscover\Shoppingcart\CartItems
+     * @return \Syscover\ShoppingCart\CartItems
      */
-    public function content()
+    public function getCartItems()
     {
-        return (empty($this->cartItems)) ? null : $this->cartItems;
+        return $this->cartItems;
     }
 
     /**
-     * Add a row to the cart
-     *
-     * @param $mixed        $mixed          Unique ID of the item|Item formated as array|Array of items
-     * @param string 	    $name           Name of the item
-     * @param int|float    	$qty            Item qty to add to the cart
-     * @param float  	    $price          Price of one item
-     * @param boolean  	    $transportable  Set if product has to be transported
-     * @param float  	    $weight         Weight of one item
-     * @param array  	    $options        Array of additional options, such as 'size' or 'color
-     * @param array  	    $taxRules       Array that content every rules to calculate tax
-     *
-     * @return \Syscover\Shoppingcart\Libraries\CartCollection|void
+     * @param   array|\Syscover\ShoppingCart\CartItem   $cartItem
+     * @return  array|CartItem
      */
-    public function add($mixed, $name = null, $qty = null, $price = null, $transportable = null, $weight = null, array $options = [], array $taxRules = [])
+    public function add($cartItem)
     {
-
-        // If it is a multidimensional array, we  call recursively the add function
-        if ($this->isMulti($mixed))
+        // If it is a array, we call recursively the add function
+        if(is_array($cartItem))
         {
             return array_map(function ($item) {
                 event('cart.batch', $item);
                 return $this->add($item);
-            }, $mixed);
+            }, $cartItem);
         }
-
-        $cartItem = $this->createCartItem($mixed, $name, $qty, $price, $transportable, $weight, $options, $taxRules);
-
-        $cartItems = $this->cartItems;
 
         // increment quantity if exist a product with de same rowId
-        if($cartItems->has($cartItem->rowId))
-        {
-            $cartItem->setQuantity($cartItem->getQuantity() + $cartItems->get($cartItem->rowId)->getQuantity());
-        }
+        if($this->cartItems->has($cartItem->rowId))
+            $cartItem->setQuantity($cartItem->getQuantity() + $this->cartItems->get($cartItem->rowId)->getQuantity());
 
-        $cartItems->put($cartItem->rowId, $cartItem);
+        // add or overwrite cartItem if exist inside of cartItems
+        $this->cartItems->put($cartItem->rowId, $cartItem);
 
         event('cart.added', $cartItem);
 
-        $this->setCartItems($cartItems);
+        $this->storeCartInstance();
 
         return $cartItem;
     }
 
     /**
-     * Get the number of items in the cart
+     * Update the quantity of one row of the cart
      *
-     * @return int
+     * @param  string                           $rowId      The rowid of the Item object you want to update
+     * @param  \Syscover\ShoppingCart\Item      $item       New Item object
+     * @return void
      */
-    public function count()
+    public function update($rowId, Item $item)
     {
-        return $this->cartItems->reduce(function($nProducts, $item){
-            return $nProducts += $item->getQuantity();
-        }, 0);
+        // delete object with all data to add new object later
+        $this->cartItems->pull($rowId);
+        $this->cartItems->put($item->rowId, $item);
+
+        $this->storeCartInstance();
     }
 
     /**
-     * Magic method to make accessing the total, tax and subtotal properties possible.
+     * Remove a row, if cart is empty after remove row it will be destroyed
+     *
+     * @param   $rowId
+     * @return  \Syscover\ShoppingCart\CartItems
+     */
+    public function remove($rowId)
+    {
+        $cartItem   = $this->cartItems->get($rowId);
+
+        // fire the cart.remove event
+        event('cart.remove', $cartItem);
+
+        $this->cartItems->forget($rowId);
+
+        // fire the cart.removed event
+        event('cart.removed', $cartItem);
+
+        // destroy all properties of cart
+        if($this->cartItems->count() === 0)
+        {
+            $this->destroy();
+        }
+        else
+        {
+            $this->storeCartInstance();
+        }
+    }
+
+    /**
+     * magic method to make accessing the total, tax and subtotal properties
      *
      * @param   string $attribute
      * @return  float|null
@@ -183,23 +201,34 @@ class Cart
     {
         if($attribute === 'total') {
             $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($total, CartItem $cartItem) {
-                return $total + $cartItem->total;
+            $total = $cartItems->reduce(function ($total, Item $item) {
+                return $total + $item->total;
             }, 0);
+
+            // apply discount
+            return $total - $this->discount <= 0? 0 : $total - $this->discount;
         }
         if($attribute === 'taxAmount') {
             $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($taxAmount, CartItem $cartItem) {
-                return $taxAmount + $cartItem->taxAmount;
+            return $cartItems->reduce(function ($taxAmount, Item $item) {
+                return $taxAmount + $item->taxAmount;
             }, 0);
         }
         if($attribute === 'subtotal')
         {
             $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($subTotal, CartItem $cartItem) {
-                return $subTotal + $cartItem->subtotal;
+            return $cartItems->reduce(function ($subTotal, Item $item) {
+                return $subTotal + $item->subtotal;
             }, 0);
         }
+        if($attribute === 'discount')
+        {
+            $cartPriceRules = $this->cartPriceRules;
+            return $cartPriceRules->reduce(function ($discount, PriceRule $priceRule) {
+                return $discount + $priceRule->discountAmount;
+            }, 0);
+        }
+
         return null;
     }
 
@@ -242,195 +271,176 @@ class Cart
         return number_format($this->total, $decimals, $decimalPoint, $thousandSeperator);
     }
 
+    /**
+     * Get the discount formated of the cart price rules.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getDiscount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->discount, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the number of items in the cart
+     *
+     * @return float
+     */
+    public function getQuantity()
+    {
+        return $this->cartItems->reduce(function($quantity, $item){
+            return $quantity += $item->getQuantity();
+        }, 0);
+    }
+
+    /**
+     * Get the number of items in the cart
+     *
+     * @return float
+     */
+    /**
+     * Set the number of items of a item cart
+     *
+     * @param int|string    $rowId
+     * @param int|float     $quantity
+     */
+    public function setQuantity($rowId, $quantity)
+    {
+        $this->cartItems->get($rowId)->setQuantity($quantity);
+
+        // if quantity is less than zere, remove item
+        if ($this->cartItems->get($rowId)->getQuantity() <= 0)
+        {
+            $this->remove($rowId);
+        }
+    }
 
     /**
      * Get Array with tax rules objects
      *
-     * @return \Illuminate\Support\Collection
+     * @return \Syscover\ShoppingCart\CartItemTaxRules
      */
     public function getTaxRules()
     {
-        $cartItems              = $this->cartItems;
-        $taxRulesShoppingCart   = collect();
+        $cartItems  = $this->cartItems;
+        $taxRules   = new CartItemTaxRules();
+
         foreach ($cartItems as $cartItem)
         {
-           foreach ($cartItem->taxRules as $taxRule)
-           {
-               if($taxRulesShoppingCart->has($taxRule->id))
-               {
-                   // if find any tax with the same ID, sum yours rates
-                   $taxRulesShoppingCart->get($taxRule->id)->taxAmount += $taxRule->taxAmount;
-               }
-               else
-               {
-                   // add new tax rule
-                   $taxRulesShoppingCart->put($taxRule->id, $taxRule);
-               }
-           }
-        }
-        return $taxRulesShoppingCart;
-    }
-
-    /**
-     * Get a row of the cart by ID
-     *
-     * @param   string  $rowId  The ID of the row to fetch
-     * @return  \Syscover\Shoppingcart\CartItem
-     * @throws  InvalidRowIDException
-     */
-    public function get($rowId)
-    {
-        if(! $this->cartItems->has($rowId))
-            throw new InvalidRowIDException("The cart does not contain rowId {$rowId}.");
-
-        return $this->cartItems->get($rowId);
-    }
-
-    /**
-     * Search the cart content for a cart item matching the given search closure.
-     *
-     * @param \Closure $search
-     * @return \Illuminate\Support\Collection
-     */
-    public function search(Closure $search)
-    {
-        $content = $this->content();
-        return $content->filter($search);
-    }
-
-    /**
-     * Remove a row, if cart is empty after remove row it will be destroyed
-     *
-     * @param   $rowId
-     * @return  \Syscover\Shoppingcart\CartItems
-     */
-    public function remove($rowId)
-    {
-        $cartItem   = $this->get($rowId);
-        $cartItems  = $this->content();
-
-        // Fire the cart.remove event
-        event('cart.remove', $cartItem);
-
-        $cartItems->forget($rowId);
-
-        // destroy all properties of cart
-        if($cartItems->count() === 0)
-            $this->destroy();
-
-        // Fire the cart.removed event
-        event('cart.removed', $cartItem);
-
-        return $this->setCartItems($cartItems);
-    }
-
-	/**
-	 * Destroy cart instance
-	 *
-	 * @return boolean
-	 */
-	public function destroy()
-	{
-		// Fire the cart.destroy event
-		event('cart.destroy');
-
-		$response = session()->remove($this->instance);
-
-		// Fire the cart.destroyed event
-		event('cart.destroyed');
-
-		return $response;
-	}
-
-    /**
-     * Create a new CartItem from the supplied attributes.
-     *
-     * @param mixed     $id
-     * @param mixed     $name
-     * @param int|float $qty
-     * @param float     $price
-     * @param boolean   $transportable
-     * @param float     $weight
-     * @param array     $options
-     * @param array  	$taxRules
-     * @return \Syscover\Shoppingcart\CartItem
-     */
-    private function createCartItem($id, $name, $qty, $price, $transportable, $weight, array $options, array $taxRules)
-    {
-        if (is_array($id))
-        {
-            $cartItem = CartItem::fromArray($id);
-            $cartItem->setQuantity($id['qty']);
-        }
-        else
-        {
-            $cartItem = CartItem::fromAttributes($id, $name, $price, $transportable, $weight, $options, $taxRules);
-            $cartItem->setQuantity($qty);
-        }
-
-        return $cartItem;
-    }
-
-    /**
-     * Update the quantity of one row of the cart
-     *
-     * @param  string           $rowId       The rowid of the item you want to update
-     * @param  mixed            $mixed      New quantity of the item | Array of attributes to update
-     * @return void
-     */
-    public function update($rowId, $mixed)
-    {
-        $cartItem = $this->get($rowId);
-
-        $cartItems = $this->cartItems;
-
-        if (is_array($mixed))
-        {
-            $cartItem->update($mixed);
-        }
-        else
-        {
-            $cartItem->setQuantity($mixed);
-        }
-
-        // if after update from array, change rowId
-        if ($rowId !== $cartItem->rowId)
-        {
-            // delete object with all data to add new object later
-            $cartItems->pull($rowId);
-
-            // if, there is other car item, add new quantity to existing car item
-            if ($cartItems->has($cartItem->rowId))
+            foreach ($cartItem->taxRules as $taxRule)
             {
-                $existingCartItem = $this->get($cartItem->rowId);
-                $cartItem->setQuantity($existingCartItem->getQuantity() + $cartItem->getQuantity());
+                if($taxRules->has($taxRule->id))
+                {
+                    // if find any tax with the same ID, sum yours rates
+                    $taxRules->get($taxRule->id)->taxAmount += $taxRule->taxAmount;
+                }
+                else
+                {
+                    // add new tax rule
+                    $taxRules->put($taxRule->id, $taxRule);
+                }
             }
         }
 
+        return $taxRules;
+    }
 
-        if ($cartItem->getQuantity() <= 0)
+    /**
+     * Search inside carItems a cartItem, matching the given search closure.
+     *
+     * @param   \Closure $search
+     * @return  \Illuminate\Support\Collection
+     */
+    public function search(Closure $search)
+    {
+        return $this->cartItems->filter($search);
+    }
+
+    /**
+     * Add CartPriceRule to collection CartPriceRuleCollection
+     *
+     * @param  \Syscover\ShoppingCart\PriceRule  $priceRule
+     * @return void
+     */
+    public function addCartPriceRule(PriceRule $priceRule)
+    {
+        // check if id cart price rule exist
+        if($this->cartPriceRules->has($priceRule->id))
         {
-            $this->remove($cartItem->rowId);
-            return;
+            // error, este descuento ya existe en el carro
         }
         else
         {
-            // add new car iten to content
-            $cartItems->put($cartItem->rowId, $cartItem);
+            // add object to cart price rules
+            $this->cartPriceRules->put($priceRule->id, $priceRule);
+
+            $this->updateDiscountAmounts();
+
+            $this->storeCartInstance();
         }
     }
 
     /**
-     * Check if the item is a multidimensional array or an array of Buyables.
+     * update and create discount amounts, inside all cartPriceRules
+     * This function set all data about rules, is called with every change
      *
-     * @param   mixed $item
-     * @return  bool
+     * @return void
      */
-    protected function isMulti($item)
+    private function updateDiscountAmounts()
     {
-        if ( ! is_array($item)) return false;
+        // reset discounts cart paramenters
+        $this->hasCartPriceRuleNotCombinable    = false;
+        $this->hasFreeShipping                  = false;
 
-        return is_array(head($item));
+        foreach($this->cartPriceRules as &$cartPriceRule)
+        {
+            // discount by percentage
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_PERCENTAGE_SUBTOTAL)
+            {
+                $this->cartItems->transform(function ($item, $key) use ($cartPriceRule) {
+                    // to set discount percentage, we calculate all amounts too
+                    return $item->setDiscountPercentage($cartPriceRule->discountPercentage);
+                });
+
+
+
+
+                // check if discount is with shipping amount
+                if($cartPriceRule->applyShippingAmount && $this->hasShipping && ! $this->hasFreeShipping)
+                {
+                    $discountAmount = (($this->subtotal + $this->shippingAmount) * $cartPriceRule->discountPercentage) / 100;
+                }
+                else
+                {
+                    $discountAmount = ($this->subtotal * $cartPriceRule->discountPercentage) / 100;
+                }
+
+                // check if discount is lower that maximum discount allowed
+                if($cartPriceRule->maximumDiscountAmount != null && $discountAmount > $cartPriceRule->maximumDiscountAmount)
+                {
+                    $discountAmount = $cartPriceRule->maximumDiscountAmount;
+                }
+
+                $cartPriceRule->discountAmount = $discountAmount;
+            }
+
+            // discount by fixed amount
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_FIXED_AMOUNT_SUBTOTAL)
+            {
+                $cartPriceRule->discountAmount = $cartPriceRule->discountFixed;
+            }
+
+            // check if price rule is combinable
+            if(! $cartPriceRule->combinable)
+                $this->hasCartPriceRuleNotCombinable = true;
+
+            // check if price rule has free shipping
+            if($cartPriceRule->freeShipping)
+                $this->hasFreeShipping = true;
+        }
     }
 
 
@@ -444,20 +454,7 @@ class Cart
 
 
 
-
-	/**
-	 * @return float
-	 */
-	public function discount()
-	{
-		$cartPriceRulesContent 	= $this->getCartPriceRuleCollection();
-		$discountAmount			= 0;
-
-		foreach($cartPriceRulesContent as $cartPriceRule)
-			$discountAmount +=  $cartPriceRule->discount_amount;
-
-		return $discountAmount;
-	}
+    ////////////////////////////////////////////////////
 
 	/**
 	 * Get the price total, include shipping amount
@@ -492,82 +489,6 @@ class Cart
 	}
 
 
-
-
-
-
-
-
-
-
-
-
-
-	/**
-	 * Check if a rowid exists in the current cart instance
-	 *
-	 * @param  string  $rowId  Unique ID of the item
-	 * @return boolean
-	 */
-	protected function hasRowId($rowId)
-	{
-		return $this->cartItems->has($rowId);
-	}
-
-	/**
-	 * Update a row if the rowId already exists
-	 *
-	 * @param  string   $rowId  The ID of the row to update
-	 * @param  array  	$attributes    The quantity and price to add to the row
-	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
-	 */
-	protected function updateRow($rowId, $attributes)
-	{
-		$cartItems = $this->cartItems;
-
-		$row = $cartItems->get($rowId);
-
-		foreach($attributes as $key => $value)
-		{
-			if($key == 'options')
-			{
-				$options = $row->options->merge($value);
-				$row->put($key, $options);
-			}
-			else
-			{
-				$row->put($key, $value);
-			}
-		}
-
-		if( ! is_null(array_keys($attributes, ['qty', 'price'])))
-		{
-			$row->put('subtotal', $row->qty * $row->price);
-		}
-
-		$cartItems->put($rowId, $row);
-
-		return $cartItems;
-	}
-
-
-
-
-
-	/**
-	 * Update an attribute of the row
-	 *
-	 * @param  string  $rowId       The ID of the row
-	 * @param  array   $attributes  An array of attributes to update
-	 * @return \Syscover\Shoppingcart\Libraries\CartCollection
-	 */
-	protected function updateAttribute($rowId, $attributes)
-	{
-		return $this->updateRow($rowId, $attributes);
-	}
-
-
-
 	/**
 	 * return shipping amount
 	 *
@@ -589,7 +510,7 @@ class Cart
 	public function setShippingAmount($shippingAmount)
 	{
 		$this->shippingAmount = $shippingAmount;
-		$this->setCart();
+		$this->storeCartInstance();
 	}
 
 	/**
@@ -613,7 +534,7 @@ class Cart
 		if(is_bool($shipping))
 		{
 			$this->shipping = $shipping;
-			$this->setCart();
+			$this->storeCartInstance();
 		}
 		else
 		{
@@ -621,74 +542,9 @@ class Cart
 		}
 	}
 
-	/**
-	 * Generate a unique id for the new cartPriceRule
-	 *
-	 * @param  \Syscover\Market\Models\CartPriceRule   	$cartPriceRule
-	 * @return string
-	 */
-	protected function generateCartPriceRuleId($cartPriceRule)
-	{
-		return md5($cartPriceRule->id_120 . serialize($cartPriceRule));
-	}
 
-	/**
-	 * Get the DiscountCollection
-	 *
-	 * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
-	 */
-	public function getCartPriceRuleCollection()
-	{
-		return $this->cartPriceRulesContent;
-	}
 
-	/**
-	 * count cartPriceRulesContent
-	 *
-	 * @return integer
-	 */
-	public function countCartPriceRuleCollection()
-	{
-		return $this->cartPriceRulesContent->count();
-	}
 
-	/**
-	 * get if cart has free shipping
-	 *
-	 * @return boolean
-	 */
-	public function hasFreeShipping()
-	{
-		return $this->freeShipping;
-	}
-
-	/**
-	 * set free shipping property
-	 *
-	 * @param 	boolean 	$freeShipping
-	 * @throws 	ShoppingcartInvalidDataTypeException
-	 */
-	public function setFreeShipping($freeShipping)
-	{
-		if(is_bool($freeShipping))
-		{
-			$this->freeShipping = $freeShipping;
-		}
-		else
-		{
-			throw new ShoppingcartInvalidDataTypeException;
-		}
-	}
-
-	/**
-	 * get if cart has any rule not combinable
-	 *
-	 * @return boolean
-	 */
-	public function hasCartPriceRuleNotCombinable()
-	{
-		return $this->cartPriceRuleNotCombinable;
-	}
 
 	/**
 	 * get rule not combinable from cart, there can only be one
@@ -709,137 +565,7 @@ class Cart
 		return null;
 	}
 
-	/**
-	 * set cart any rule not combinable
-	 *
-	 * @param 	boolean	$cartPriceRuleNotCombinable
-	 * @throws 	ShoppingcartInvalidDataTypeException
-	 */
-	public function setCartPriceRuleNotCombinable($cartPriceRuleNotCombinable)
-	{
-		if(is_bool($cartPriceRuleNotCombinable))
-		{
-			$this->cartPriceRuleNotCombinable = $cartPriceRuleNotCombinable;
-		}
-		else
-		{
-			throw new ShoppingcartInvalidDataTypeException;
-		}
-	}
 
 
-    /**
-     * Set the DiscountCollection
-     *
-     * @param \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection $cartPriceRulesContent
-     * @return \Syscover\Shoppingcart\Libraries\CartPriceRuleCollection
-     */
-	protected function setCartPriceRuleCollection($cartPriceRulesContent)
-	{
-		$this->cartPriceRulesContent = $cartPriceRulesContent;
 
-		// save current changes
-		$this->setCart();
-
-		return $this->cartPriceRulesContent;
-	}
-
-
-	/**
-	 * check if any cartPriceRule exist in CartPriceRuleCollection
-	 *
-	 * @param  \Syscover\Market\Models\CartPriceRule  $cartPriceRule
-	 * @return boolean
-	 */
-	public function hasCartPriceRule($cartPriceRule)
-	{
-		$cartPriceRulesContent 	= $this->getCartPriceRuleCollection();
-		$cartPriceRuleId 			= $this->generateCartPriceRuleId($cartPriceRule);
-
-		// comprobamos que el id de descuento no existe en el carro
-		if($cartPriceRulesContent->has($cartPriceRuleId))
-		{
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * add CartPriceRule to collection CartPriceRuleCollection
-	 *
-	 * @param  \Syscover\Market\Models\CartPriceRule  $cartPriceRule
-	 * @return void
-	 */
-	public function addCartPriceRule($cartPriceRule)
-	{
-		// comprobamos que el id de descuento no existe en el carro
-		if($this->hasCartPriceRule($cartPriceRule))
-		{
-			// error, este descuento ya existe en el carro
-		}
-		else
-		{
-			$cartPriceRulesContent 	= $this->getCartPriceRuleCollection();
-			$cartPriceRuleId 			= $this->generateCartPriceRuleId($cartPriceRule);
-
-			// add object to cart price collection
-			$cartPriceRulesContent->put($cartPriceRuleId, $cartPriceRule);
-
-			// save cartPriceRulesContent
-			$this->setCartPriceRuleCollection($cartPriceRulesContent);
-		}
-	}
-
-	/**
-	 * Update and create all amounts, inside all cartPriceRules
-	 * This function set all data about rules, is called with every change
-	 */
-	protected function updateAmountsCartPriceRuleCollection()
-	{
-		$cartPriceRulesContent = $this->getCartPriceRuleCollection();
-
-		// in this step, add property discount_amount, inside cartPriceRule object
-		foreach($cartPriceRulesContent as &$cartPriceRule)
-		{
-			// discount by percentage
-			if($cartPriceRule->discount_type_id_120 == 2)
-			{
-				// check if discount is with shipping amount
-				if($cartPriceRule->apply_shipping_amount_120)
-				{
-					$discountAmount = (($this->subtotal() + $this->getShipping()) * $cartPriceRule->discount_percentage_120) / 100;
-				}
-				else
-				{
-					$discountAmount = ($this->subtotal() * $cartPriceRule->discount_percentage_120) / 100;
-				}
-
-				// check if discount is lower that maximum discount allowed
-				if($cartPriceRule->maximum_discount_amount_120 != null && $discountAmount > $cartPriceRule->maximum_discount_amount_120)
-				{
-					$discountAmount = $cartPriceRule->maximum_discount_amount_120;
-				}
-
-				$cartPriceRule->discount_amount = $discountAmount;
-			}
-
-			// discount by fixed amount
-			if($cartPriceRule->discount_type_id_120 == 3)
-			{
-				$cartPriceRule->discount_amount = $cartPriceRule->discount_fixed_amount_120;
-			}
-
-			// check if there is any cartPriceRule with free shipping
-			if($cartPriceRule->free_shipping_120)
-			{
-				$this->setFreeShipping(true);
-			}
-
-			// check if there is this rule is combinable
-			if( ! $cartPriceRule->combinable_120)
-			{
-				$this->setCartPriceRuleNotCombinable(true);
-			}
-		}
-	}
 }

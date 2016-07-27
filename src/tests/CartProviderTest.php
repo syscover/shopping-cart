@@ -1,6 +1,8 @@
 <?php
-use \Syscover\Shoppingcart\Facades\CartProvider;
-use \Syscover\Shoppingcart\Cart;
+use Syscover\ShoppingCart\Facades\CartProvider;
+use Syscover\ShoppingCart\Cart;
+use Syscover\ShoppingCart\Item;
+use Syscover\ShoppingCart\TaxRule;
 
 require_once __DIR__ . '/shopping_cart_tests_helpers/SessionMock.php';
 require_once __DIR__ . '/shopping_cart_tests_helpers/ProductModelStub.php';
@@ -12,117 +14,140 @@ class CartProviderTest extends TestCase
     {
         $this->expectsEvents('cart.added');
 
-        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000);
+        CartProvider::instance()->add(new Item('293ad', 'Product 1', 1, 9.99, 1.000, true));
+
+        $this->assertEquals(1, CartProvider::instance()->getCartItems()->count());
     }
 
     public function testCartCanAddWithOptions()
     {
         $this->expectsEvents('cart.added');
 
-        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000, ['size' => 'large']);
+        CartProvider::instance()->add(new Item('293ad', 'Product 1', 1, 9.99, 1.000, true, [], ['size' => 'L']));
+    }
+
+    public function testCartCanAddMultipleCartItems()
+    {
+        $this->expectsEvents('cart.added');
+
+        CartProvider::instance()->add([
+            new Item('293ad', 'Product 1', 1, 9.99, 1.000, true),
+            new Item('283ad', 'Product 2', 3, 10.00, 1.000, true),
+            new Item('244ad', 'Product 3', 2, 20.50, 1.000, true)
+        ]);
+
+        $this->assertEquals(3, CartProvider::instance()->getCartItems()->count());
+
     }
 
     public function testCartCanAddWithTaxRule()
     {
         $this->expectsEvents('cart.added');
 
-        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000, [], ['name' => 'VAT', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 21.00]);
+        CartProvider::instance()->add(new Item('293ad', 'Product 1', 1, 9.99, 1.000, true, new TaxRule('VAT', 21.00)));
 
-        $this->assertEquals(1, CartProvider::instance()->content()->first()->taxRules->count());
-        $this->assertEquals(21, CartProvider::instance()->content()->first()->taxRules->first()->taxRate);
-        $this->assertEquals('21,00', CartProvider::instance()->content()->first()->getTaxRate());
+        $this->assertEquals(1, CartProvider::instance()->getCartItems()->first()->taxRules->count());
+        $this->assertEquals(21, CartProvider::instance()->getCartItems()->first()->taxRules->first()->taxRate);
+        $this->assertEquals('21,00', CartProvider::instance()->getCartItems()->first()->getTaxRate());
     }
 
     public function testCartCanAddWithTaxRules()
     {
         $this->expectsEvents('cart.added');
 
-        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000, [], [['name' => 'VAT', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 21.00], ['name' => 'VAT2', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 10.00]]);
+        CartProvider::instance()->add(new Item('293ad', 'Product 1', 1, 100, 1.000, true, [
+            new TaxRule('IVA', 21.00, 0, 0),
+            new TaxRule('OTHER IVA', 10.00, 1, 1)
+        ]));
 
-        $this->assertEquals(2, CartProvider::instance()->content()->first()->taxRules->count());
+        $this->assertEquals(2, CartProvider::instance()->getCartItems()->first()->taxRules->count());
+
+        if(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX)
+        {
+            $this->assertEquals('100,00', CartProvider::instance()->getCartItems()->first()->getSubtotal());
+            $this->assertEquals(100.00, CartProvider::instance()->getCartItems()->first()->subtotal);
+            $this->assertEquals('33,10', CartProvider::instance()->getCartItems()->first()->getTaxAmount());
+            $this->assertEquals('133,10', CartProvider::instance()->getCartItems()->first()->getTotal());
+            $this->assertEquals(133.100, CartProvider::instance()->getCartItems()->first()->total);
+
+            $this->assertEquals('21,00', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxAmount());
+            $this->assertEquals('21', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxRate());
+            $this->assertEquals('IVA', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->name);
+
+            $this->assertEquals('12,10', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxAmount());
+            $this->assertEquals('10', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxRate());
+            $this->assertEquals('OTHER IVA', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->name);
+        }
+        elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
+        {
+            $this->assertEquals('75,13', CartProvider::instance()->getCartItems()->first()->getSubtotal());
+            $this->assertEquals(75.1314800901577797276331693865358829498291015625, CartProvider::instance()->getCartItems()->first()->subtotal);
+            $this->assertEquals('24,87', CartProvider::instance()->getCartItems()->first()->getTaxAmount());
+            $this->assertEquals('100,00', CartProvider::instance()->getCartItems()->first()->getTotal());
+            $this->assertEquals(100, CartProvider::instance()->getCartItems()->first()->total);
+
+
+
+            $this->assertEquals('15,78', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxAmount());
+            $this->assertEquals('21', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxRate());
+            $this->assertEquals('IVA', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->name);
+
+            $this->assertEquals('9,09', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxAmount());
+            $this->assertEquals('10', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxRate());
+            $this->assertEquals('OTHER IVA', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->name);
+        }
     }
 
     public function testCartCanAddWithSameTaxRules()
     {
         $this->expectsEvents('cart.added');
 
-        CartProvider::instance()->add('293ad', 'Product 1', 1, 110.99, true, 1.000, [], [['name' => 'VAT', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 21.00], ['name' => 'VAT', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 10.00]]);
+        CartProvider::instance()->add(new Item('293ad', 'Product 1', 1, 110.99, 1.000, true, [
+            new TaxRule('VAT', 21.00),
+            new TaxRule('VAT', 10.00)
+        ]));
 
-        $this->assertEquals(1, CartProvider::instance()->content()->first()->taxRules->count());
-        $this->assertEquals(31, CartProvider::instance()->content()->first()->taxRules->first()->taxRate);
-        $this->assertEquals('31,00', CartProvider::instance()->content()->first()->getTaxRate());
+        $this->assertEquals(1, CartProvider::instance()->getCartItems()->first()->taxRules->count());
+        $this->assertEquals(31, CartProvider::instance()->getCartItems()->first()->taxRules->first()->taxRate);
+        $this->assertEquals('31,00', CartProvider::instance()->getCartItems()->first()->getTaxRate());
 
         if(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX)
         {
-            $this->assertEquals('110,99', CartProvider::instance()->content()->first()->getSubtotal());
-            $this->assertEquals(110.99, CartProvider::instance()->content()->first()->subtotal);
-            $this->assertEquals('34,41', CartProvider::instance()->content()->first()->getTaxAmount());
-            $this->assertEquals('145,40', CartProvider::instance()->content()->first()->getTotal());
-            $this->assertEquals(145.396899999999988040144671685993671417236328125, CartProvider::instance()->content()->first()->total);
+            $this->assertEquals('110,99', CartProvider::instance()->getCartItems()->first()->getSubtotal());
+            $this->assertEquals(110.99, CartProvider::instance()->getCartItems()->first()->subtotal);
+            $this->assertEquals('34,41', CartProvider::instance()->getCartItems()->first()->getTaxAmount());
+            $this->assertEquals('145,40', CartProvider::instance()->getCartItems()->first()->getTotal());
+            $this->assertEquals(145.396899999999988040144671685993671417236328125, CartProvider::instance()->getCartItems()->first()->total);
         }
         elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
         {
-            $this->assertEquals('84,73', CartProvider::instance()->content()->first()->getSubtotal());
-            $this->assertEquals(84.7251908396946618040601606480777263641357421875, CartProvider::instance()->content()->first()->subtotal);
-            $this->assertEquals('26,26', CartProvider::instance()->content()->first()->getTaxAmount());
-            $this->assertEquals('110,99', CartProvider::instance()->content()->first()->getTotal());
-            $this->assertEquals(110.99, CartProvider::instance()->content()->first()->total);
+            $this->assertEquals('84,73', CartProvider::instance()->getCartItems()->first()->getSubtotal());
+            $this->assertEquals(84.7251908396946618040601606480777263641357421875, CartProvider::instance()->getCartItems()->first()->subtotal);
+            $this->assertEquals('26,26', CartProvider::instance()->getCartItems()->first()->getTaxAmount());
+            $this->assertEquals('110,99', CartProvider::instance()->getCartItems()->first()->getTotal());
+            $this->assertEquals(110.99, CartProvider::instance()->getCartItems()->first()->total);
         }
     }
 
-    public function testCartCanAddBatch()
+    public function testCartCanAddMultiple()
     {
-        $this->expectsEvents('cart.batch');
+        $this->expectsEvents('cart.added');
 
-        CartProvider::instance()->add([
-            ['id' => '293ad', 'name' => 'Product 1', 'qty' => 3, 'price' => 10.00, 'transportable' => true, 'weight' => 1.000],
-            ['id' => '4832k', 'name' => 'Product 2', 'qty' => 2, 'price' => 10.00, 'transportable' => true, 'weight' => 1.000, 'options' => ['size' => 'large']]
-        ]);
+        for($i = 1; $i <= 5; $i++)
+            CartProvider::instance()->add(new Item('293ad' . $i, 'Product', 2, 9.99, 1.000, true));
 
-        $this->assertEquals(5, CartProvider::instance()->count());
-        $this->assertEquals('30,00', CartProvider::instance()->content()->first()->getSubtotal());
+        $this->assertEquals(5, CartProvider::instance()->getCartItems()->count());
+        $this->assertEquals(10, CartProvider::instance()->getQuantity());
     }
 
-//    public function testCartCanAddMultiple()
-//    {
-//        $this->expectsEvents('cart.add');
-//        $this->expectsEvents('cart.added');
-//
-//        for($i = 1; $i <= 5; $i++)
-//        {
-//            CartProvider::instance()->add('293ad' . $i, 'Product ' . $i, 1, 9.99, true, 1.000);
-//        }
-//
-//        $this->assertEquals(5, CartProvider::instance()->count());
-//    }
-//
-//    public function testCartCanAddWithNumericId()
-//    {
-//        $this->expectsEvents('cart.add');
-//        $this->expectsEvents('cart.added');
-//
-//        CartProvider::instance()->add(12345, 'Product 1', 1, 9.99, array('size' => 'large'));
-//    }
-//
-//    public function testCartCanAddArray()
-//    {
-//        $this->expectsEvents('cart.add');
-//        $this->expectsEvents('cart.added');
-//
-//        CartProvider::instance()->add(array('id' => '293ad', 'name' => 'Product 1', 'qty' => 1, 'price' => 9.99, 'options' => array('size' => 'large')));
-//    }
-//
-//    public function testCartCanAddBatch()
-//    {
-//        $this->expectsEvents('cart.batch');
-//        $this->expectsEvents('cart.batched');
-//
-//        CartProvider::instance()->add(array(
-//            array('id' => '293ad', 'name' => 'Product 1', 'qty' => 1, 'price' => 10.00),
-//            array('id' => '4832k', 'name' => 'Product 2', 'qty' => 1, 'price' => 10.00, 'options' => array('size' => 'large'))
-//        ));
-//    }
-//
+    public function testCartCanAddWithNumericId()
+    {
+        $this->expectsEvents('cart.added');
+
+        CartProvider::instance()->add(new Item(12345, 'Product', 2, 9.99, 1.000, true));
+    }
+
+    //
 //    public function testCartCanAddMultipleOptions()
 //    {
 //        $this->expectsEvents('cart.add');
@@ -132,13 +157,13 @@ class CartProviderTest extends TestCase
 //
 //        $cartRow = CartProvider::instance()->get('c5417b5761c7fb837e4227a38870dd4d');
 //
-//        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartRowOptionsCollection', $cartRow->options);
+//        $this->assertInstanceOf('Syscover\ShoppingCart\Libraries\CartRowOptionsCollection', $cartRow->options);
 //        $this->assertEquals('large', $cartRow->options->size);
 //        $this->assertEquals('red', $cartRow->options->color);
 //    }
 //
 //    /**
-//     * @expectedException Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidItemException
+//     * @expectedException Syscover\ShoppingCart\Exceptions\ShoppingcartInvalidItemException
 //     */
 //    public function testCartThrowsExceptionOnEmptyItem()
 //    {
@@ -148,7 +173,7 @@ class CartProviderTest extends TestCase
 //    }
 //
 //    /**
-//     * @expectedException Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidQtyException
+//     * @expectedException Syscover\ShoppingCart\Exceptions\ShoppingcartInvalidQtyException
 //     */
 //    public function testCartThrowsExceptionOnNoneNumericQty()
 //    {
@@ -158,7 +183,7 @@ class CartProviderTest extends TestCase
 //    }
 //
 //    /**
-//     * @expectedException Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidPriceException
+//     * @expectedException Syscover\ShoppingCart\Exceptions\ShoppingcartInvalidPriceException
 //     */
 //    public function testCartThrowsExceptionOnNoneNumericPrice()
 //    {
@@ -175,7 +200,7 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //
-//        $this->assertEquals(2, CartProvider::instance()->content()->first()->qty);
+//        $this->assertEquals(2, CartProvider::instance()->getCartItems()->first()->qty);
 //    }
 //
 //    public function testCartCanUpdateQty()
@@ -188,7 +213,7 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //        CartProvider::instance()->update('8cbf215baa3b757e910e5305ab981172', 2);
 //
-//        $this->assertEquals(2, CartProvider::instance()->content()->first()->qty);
+//        $this->assertEquals(2, CartProvider::instance()->getCartItems()->first()->qty);
 //    }
 //
 //    public function testCartCanUpdateItem()
@@ -201,7 +226,7 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //        CartProvider::instance()->update('8cbf215baa3b757e910e5305ab981172', array('name' => 'Product 2'));
 //
-//        $this->assertEquals('Product 2', CartProvider::instance()->content()->first()->name);
+//        $this->assertEquals('Product 2', CartProvider::instance()->getCartItems()->first()->name);
 //    }
 //
 //    public function testCartCanUpdateItemToNumericId()
@@ -214,7 +239,7 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //        CartProvider::instance()->update('8cbf215baa3b757e910e5305ab981172', array('id' => 12345));
 //
-//        $this->assertEquals(12345, CartProvider::instance()->content()->first()->id);
+//        $this->assertEquals(12345, CartProvider::instance()->getCartItems()->first()->id);
 //    }
 //
 //    public function testCartCanUpdateOptions()
@@ -227,11 +252,11 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, array('size' => 'S'));
 //        CartProvider::instance()->update('9be7e69d236ca2d09d2e0838d2c59aeb', array('options' => array('size' => 'L')));
 //
-//        $this->assertEquals('L', CartProvider::instance()->content()->first()->options->size);
+//        $this->assertEquals('L', CartProvider::instance()->getCartItems()->first()->options->size);
 //    }
 //
 //    /**
-//     * @expectedException Syscover\Shoppingcart\Exceptions\ShoppingcartInvalidRowIDException
+//     * @expectedException Syscover\ShoppingCart\Exceptions\ShoppingcartInvalidRowIDException
 //     */
 //    public function testCartThrowsExceptionOnInvalidRowId()
 //    {
@@ -248,7 +273,7 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //        CartProvider::instance()->remove('8cbf215baa3b757e910e5305ab981172');
 //
-//        $this->assertTrue(CartProvider::instance()->content()->isEmpty());
+//        $this->assertTrue(CartProvider::instance()->getCartItems()->isEmpty());
 //    }
 //
 //    public function testCartCanRemoveOnUpdate()
@@ -263,7 +288,7 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //        CartProvider::instance()->update('8cbf215baa3b757e910e5305ab981172', 0);
 //
-//        $this->assertTrue(CartProvider::instance()->content()->isEmpty());
+//        $this->assertTrue(CartProvider::instance()->getCartItems()->isEmpty());
 //    }
 //
 //    public function testCartCanRemoveOnNegativeUpdate()
@@ -278,7 +303,7 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //        CartProvider::instance()->update('8cbf215baa3b757e910e5305ab981172', -1);
 //
-//        $this->assertTrue(CartProvider::instance()->content()->isEmpty());
+//        $this->assertTrue(CartProvider::instance()->getCartItems()->isEmpty());
 //    }
 //
 //    public function testCartCanGet()
@@ -299,8 +324,8 @@ class CartProviderTest extends TestCase
 //
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //
-//        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartCollection', CartProvider::instance()->content());
-//        $this->assertFalse(CartProvider::instance()->content()->isEmpty());
+//        $this->assertInstanceOf('Syscover\ShoppingCart\Libraries\CartCollection', CartProvider::instance()->getCartItems());
+//        $this->assertFalse(CartProvider::instance()->getCartItems()->isEmpty());
 //    }
 //
 //    public function testCartCanDestroy()
@@ -313,8 +338,8 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //        CartProvider::instance()->destroy();
 //
-//        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartCollection', CartProvider::instance()->content());
-//        $this->assertTrue(CartProvider::instance()->content()->isEmpty());
+//        $this->assertInstanceOf('Syscover\ShoppingCart\Libraries\CartCollection', CartProvider::instance()->getCartItems());
+//        $this->assertTrue(CartProvider::instance()->getCartItems()->isEmpty());
 //    }
 //
 //    public function testCartCanDestroyOnlyOneInstance()
@@ -328,11 +353,11 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance('testing')->add('963bb', 'Product 2', 1, 19.90);
 //        CartProvider::instance()->destroy();
 //
-//        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartCollection', CartProvider::instance()->content());
-//        $this->assertTrue(CartProvider::instance()->content()->isEmpty());
+//        $this->assertInstanceOf('Syscover\ShoppingCart\Libraries\CartCollection', CartProvider::instance()->getCartItems());
+//        $this->assertTrue(CartProvider::instance()->getCartItems()->isEmpty());
 //
-//        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartCollection', CartProvider::instance('testing')->content());
-//        $this->assertFalse(CartProvider::instance('testing')->content()->isEmpty());
+//        $this->assertInstanceOf('Syscover\ShoppingCart\Libraries\CartCollection', CartProvider::instance('testing')->getCartItems());
+//        $this->assertFalse(CartProvider::instance('testing')->getCartItems()->isEmpty());
 //    }
 //
 //    public function testCartCanGetTotal()
@@ -387,10 +412,10 @@ class CartProviderTest extends TestCase
 //        CartProvider::instance('firstInstance')->add('293ad', 'Product 1', 1, 9.99);
 //        CartProvider::instance('secondInstance')->add('986se', 'Product 2', 1, 19.99);
 //
-//        $this->assertTrue(CartProvider::instance('firstInstance')->content()->has('8cbf215baa3b757e910e5305ab981172'));
-//        $this->assertFalse(CartProvider::instance('firstInstance')->content()->has('22eae2b9c10083d6631aaa023106871a'));
-//        $this->assertTrue(CartProvider::instance('secondInstance')->content()->has('22eae2b9c10083d6631aaa023106871a'));
-//        $this->assertFalse(CartProvider::instance('secondInstance')->content()->has('8cbf215baa3b757e910e5305ab981172'));
+//        $this->assertTrue(CartProvider::instance('firstInstance')->getCartItems()->has('8cbf215baa3b757e910e5305ab981172'));
+//        $this->assertFalse(CartProvider::instance('firstInstance')->getCartItems()->has('22eae2b9c10083d6631aaa023106871a'));
+//        $this->assertTrue(CartProvider::instance('secondInstance')->getCartItems()->has('22eae2b9c10083d6631aaa023106871a'));
+//        $this->assertFalse(CartProvider::instance('secondInstance')->getCartItems()->has('8cbf215baa3b757e910e5305ab981172'));
 //    }
 //
 //    public function testCartCanSearchInMultipleInstances()
@@ -406,7 +431,7 @@ class CartProviderTest extends TestCase
 //    }
 //
 //    /**
-//     * @expectedException Syscover\Shoppingcart\Exceptions\ShoppingcartInstanceException
+//     * @expectedException Syscover\ShoppingCart\Exceptions\ShoppingcartInstanceException
 //     */
 //    public function testCartThrowsExceptionOnEmptyInstance()
 //    {
@@ -420,7 +445,7 @@ class CartProviderTest extends TestCase
 //
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //
-//        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartCollection', CartProvider::instance()->content());
+//        $this->assertInstanceOf('Syscover\ShoppingCart\Libraries\CartCollection', CartProvider::instance()->getCartItems());
 //    }
 //
 //    public function testCartCollectionHasCartRowCollection()
@@ -430,7 +455,7 @@ class CartProviderTest extends TestCase
 //
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //
-//        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartRowCollection', CartProvider::instance()->content()->first());
+//        $this->assertInstanceOf('Syscover\ShoppingCart\Libraries\CartRowCollection', CartProvider::instance()->getCartItems()->first());
 //    }
 //
 //    public function testCartRowCollectionHasCartRowOptionsCollection()
@@ -440,7 +465,7 @@ class CartProviderTest extends TestCase
 //
 //        CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99);
 //
-//        $this->assertInstanceOf('Syscover\Shoppingcart\Libraries\CartRowOptionsCollection', CartProvider::instance()->content()->first()->options);
+//        $this->assertInstanceOf('Syscover\ShoppingCart\Libraries\CartRowOptionsCollection', CartProvider::instance()->getCartItems()->first()->options);
 //    }
 //
 //    public function testCartCanAssociateWithModel()
@@ -479,7 +504,7 @@ class CartProviderTest extends TestCase
 //    }
 //
 //    /**
-//     * @expectedException Syscover\Shoppingcart\Exceptions\ShoppingcartUnknownModelException
+//     * @expectedException Syscover\ShoppingCart\Exceptions\ShoppingcartUnknownModelException
 //     */
 //    public function testCartThrowsExceptionOnUnknownModel()
 //    {

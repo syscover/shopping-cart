@@ -1,4 +1,4 @@
-# ShoppingCart to Laravel 5.2
+# Advanced ShoppingCart to Laravel 5.2
 
 ## Installation
 
@@ -15,23 +15,23 @@ composer update
 **2 - Register service provider, on file config/app.php add to providers array**
 
 ```
-Syscover\Shoppingcart\ShoppingcartServiceProvider::class,
+Syscover\ShoppingCart\ShoppingCartServiceProvider::class,
 
 ```
 
 **3 - Register alias, on file config/app.php add to aliases array**
 
 ```
-'CartProvider' => Syscover\Shoppingcart\Facades\CartProvider::class,
+'CartProvider' => Syscover\ShoppingCart\Facades\CartProvider::class,
 
 ```
 
-**To run laravel testing**
+
+##To run laravel testing
 
 publish testing files
-
 ```
-php artisan vendor:publish --provider="Syscover\Shoppingcart\ShoppingcartServiceProvider"
+php artisan vendor:publish --provider="Syscover\ShoppingCart\ShoppingcartServiceProvider"
 ```
 
 and run the test using the following command:
@@ -40,50 +40,70 @@ phpunit tests/CartProviderTest
 ```
 
 
-**The shoppingcart gives you the following methods to use:**
+##The shoppingcart gives you the following methods to use:
 
-Add row to cart
+Add car item to cart, you need create Item objects to add cart, you can use a Item object or Items array if you want add various elements
 ```
-// Basic form, without tax rules
-CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000, ['size' => 'large']);
+// Basic add Item to Cart
+CartProvider::instance()->add(new Item('293ad', 'Product 1', 1, 9.99, 1.000, true));
 
-// Basic form, with tax rule
-CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000, [], ['name' => 'VAT', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 21.00]);
-
-// Basic form, with various tax rules
-CartProvider::instance()->add('293ad', 'Product 1', 1, 9.99, true, 1.000, [], [['name' => 'VAT', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 21.00], ['name' => 'VAT2', 'priority' => 1, 'sortOrder' => 1, 'taxRate' => 10.00]]);
-
-// Array form
-CartProvider::instance()->add(['id' => '293ad', 'name' => 'Product 1', 'qty' => 1, 'price' => 9.99, 'transportable' => true, 'weight' => 1.000, 'options' => ['size' => 'large']]);
-
-// Batch method
+// Multiple add Items to Cart
 CartProvider::instance()->add([
-  ['id' => '293ad', 'name' => 'Product 1', 'qty' => 1, 'price' => 10.00, 'transportable' => true, 'weight' => 1.000],
-  ['id' => '4832k', 'name' => 'Product 2', 'qty' => 1, 'price' => 10.00, 'transportable' => true, 'weight' => 1.000, 'options' => ['size' => 'large']]
+    new Item('293ad', 'Product 1', 1, 9.99, 1.000, true),
+    new Item('979ze', 'Product 2', 1, 12.90, 1.000, true)
+]);
+
+// Multiple add Items with options to Cart
+CartProvider::instance()->add([
+    new Item('293ad', 'Product 1', 1, 9.99, 1.000, true, [], ['size' => 'L']),
+    new Item('979ze', 'Product 2', 1, 12.90, 1.000, true, [], ['size' => 'M'])
 ]);
 ```
 
-To update an item in the cart, you'll first need the rowId of the item. Next you can use the update() method to update it.
 
-If you simply want to update the quantity, you'll pass the update method the rowId and the new quantity: 
+We have created TaxRule object to calculate tax from shopping cart, this object has this properties
+* name:string = Name of tax
+* taxRate:float = Percentage of tax
+* priority:int [default 0] = Order to calculate tax over subtotal. If are different priorities, the highest tax is calculated on the subtotal more taxes lower priority 
+* sortOrder:int [default 0] = Order to appear tax on screen
 
+Cart is ready to TaxRule object, you can add tax rules to each cartItem object. You can add only one TaxRule or various with a array tax rules
+```
+// Multiple add Items to Cart with options and one tax rule
+CartProvider::instance()->add([
+    new Item('293ad', 'Product 1', 1, 9.99, 1.000, true, new TaxRule('IVA', 21), ['size' => 'L']),
+    new Item('979ze', 'Product 2', 1, 12.90, 1.000, true, new TaxRule('IVA', 21), ['size' => 'M'])
+]);
+
+// Multiple add Items to Cart with options and various tax rules
+CartProvider::instance()->add([
+    new Item('293ad', 'Product 1', 1, 9.99, 1.000, true, [
+            new TaxRule('IVA', 21, 0, 0),
+            new TaxRule('Customs', 10, 1, 1),
+        ], ['size' => 'L']),
+    new Item('979ze', 'Product 2', 1, 12.90, 1.000, true, 
+            new TaxRule('IVA', 21, 0, 0),
+            new TaxRule('Customs', 10, 1, 1),
+        ], ['size' => 'M'])
+]);
+```
+
+
+To update quantity from a item you have setQuantity method, you'll pass the update method the rowId and the new quantity
 ```
 $rowId = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';
 
-CartProvider::instance()->update($rowId, 2);
+CartProvider::instance()->setQuantity($rowId, 2);
 ```
 
-If you want to update more attributes of the item, you can either pass the update method an array or a Buyable as the second parameter. 
-This way you can update all information of the item with the given rowId.
 
+If you want to update more attributes of the item, you can pass Item object to the update method with rowId from item to update.
 ```
-CartProvider::instance()->update($rowId, ['name' => 'Product 1']); // Will update the name
-CartProvider::instance()->update($rowId, $product); // Will update the id, name and price
+CartProvider::instance()->update($rowId, new Item('293ad', 'Product 1', 1, 19.99, 1.000, true, new TaxRule('IVA', 21), ['size' => 'L']));
+```
 
-```
 
 To remove element from the cart, the remove() method on the cart and pass it the rowId
-
 ```
 $rowId = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';
 
@@ -92,105 +112,111 @@ CartProvider::instance()->remove($rowId);
 
 
 If you want to get an item from the cart using its rowId, you can simply call the get() method on the cart and pass it the rowId.
-
 ```
 $rowId = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';
 
-CartProvider::instance()->get($rowId);
+CartProvider::instance()->getCartItems()->get($rowId);
 ```
 
-If you also want to get the cart content. 
-This is where you'll use the content method. 
+
+If you want to get the cart items, you have getCartItems method. 
 This method will return a Collection of CartItems which you can iterate over and show the content to your customers.
+```
+CartProvider::instance()->getCartItems();
+```
 
-```
-CartProvider::instance()->content();
-```
 
 If you want to completely remove the content of a cart, you can call the destroy method on the cart. This will remove all CartItems from the cart for the current cart instance.
-
 ```
 CartProvider::instance()->destroy();
 ```
 
-Get the price without shipping
 
+Get the subtotal price, without tax 
 ```
-CartProvider::instance()->subtotal();
+CartProvider::instance()->subtotal;
+
+// or subtotal price formatted
+CartProvider::instance()->getSubtotal();
 ```
+
 
 To get total price
-
 ```
-CartProvider::instance()->total()
-
-/**
- * Get the price total with shipping
- *
- * @return float
- */
-
 CartProvider::instance()->total();
+
+// or total price formatted
+CartProvider::instance()->getTotal();
 ```
 
-Get the number of items in the cart
 
+Get the number of items in the cart, total items
 ```
- CartProvider::instance()->count(); // Total items
+ CartProvider::instance()->getQuantity();
 ```
+
 
 To find an item in the cart, you can use the search() method.
 As you can see the Closure will receive two parameters. The first is the CartItem to perform the check against. The second parameter is the rowId of this CartItem.
 
-The method will return a Collection containing all CartItems that where found
+The method will return a Collection containing all Items that where found
 
 This way of searching gives you total control over the search process and gives you the ability to create very precise and specific searches.
-
 ```
-  $cart->search(function ($cartItem, $rowId) {
+  CartProvider::instance()->search(function ($cartItem, $rowId) {
       return $cartItem->id === 1;
   });
 ```
 
-The package also supports multiple instances of the cart. The way this works is like this:
-You can set the current instance of the cart with Cart::instance('newInstance'), at that moment, the active instance of the cart is newInstance, so when you add, remove or get the content of the cart, you work with the newInstance instance of the cart. 
-If you want to switch instances, you just call Cart::instance('otherInstance') again, and you're working with the otherInstance again.
 
-The default cart instance is called default, so when you're not using instances, Cart::instance()->content(); is the same as Cart::instance('default')->content().
+The package also supports multiple instances of the cart. The way this works is like this:
+You can set the current instance of the cart with CartProvider::instance('newInstance'), at that moment, the active instance of the cart is newInstance, so when you add, remove or get the content of the cart, you work with the newInstance instance of the cart. 
+If you want to switch instances, you just call CartProvider::instance('otherInstance') again, and you're working with the otherInstance again.
+
+The default cart instance is called default, so when you're not using instances, CartProvider::instance()->getCartItems(); is the same as CartProvider::instance('default')->getCartItems().
 
 So a little example:
 ```
-CartProvider::instance('shopping')->add('192ao12', 'Product 1', 1, 9.99);
+CartProvider::instance('shopping')->add(new Item('192ao12', 'Product 1', 1, 9.99));
 
-// Get the content of the 'shopping' cart
-CartProvider::instance('shopping')->content();
+// Get items of the 'shopping' cart
+CartProvider::instance('shopping')->getCartItems();
 
-Cart::instance('wishlist')->add('sdjk922', 'Product 2', 1, 19.95, array('size' => 'medium'));
+CartProvider::instance('wishlist')->add(new Item('sdjk922', 'Product 2', 1, 19.95));
 
-// Get the content of the 'wishlist' cart
-Cart::instance('wishlist')->content();
+// Get items of the 'wishlist' cart
+CartProvider::instance('wishlist')->getCartItems();
 ```
 
-If you want to check, if this cart has shipping, you can use this method
 
+
+
+
+
+
+
+
+
+
+If you want to check, if this cart has shipping, you can use this method
 ```
 CartProvider::instance()->hasShipping();
 ```
 
-If you want set shipping with true or false, you can use this method setShipping and pass boolean parameter
 
+If you want set shipping with true or false, you can use this method setShipping and pass boolean parameter
 ```
 CartProvider::instance()->setShipping(true);
 ```
 
-You have setShippingAmount to set amount shipping of all cart
 
+You have setShippingAmount to set amount shipping of all cart
 ```
 CartProvider::instance()->setShippingAmount();
 ```
 
-You have getShippingAmount to get amount shipping of all cart
 
+You have getShippingAmount to get amount shipping of all cart
 ```
 CartProvider::instance()->getShippingAmount();
 ```

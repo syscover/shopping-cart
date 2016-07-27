@@ -1,8 +1,8 @@
 {
     "name": "syscover/shoppingcart",
     "version": "5.2",
-    "description": "Shoppingcart package",
-    "keywords": ["syscover","pulsar","laravel","Shoppingcart"],
+    "description": "ShoppingCart package",
+    "keywords": ["syscover","pulsar","laravel","Shoppingcart","Shopping Cart"],
     "license": "MIT",
     "authors": [
         {
@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Syscover\\Shoppingcart\\": "src/Syscover/Shoppingcart"
+            "Syscover\\ShoppingCart\\": "src/Syscover/ShoppingCart"
         }
     },
     "minimum-stability": "dev"

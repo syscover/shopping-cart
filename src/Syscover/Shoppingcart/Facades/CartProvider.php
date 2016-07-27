@@ -1,4 +1,4 @@
-<?php namespace Syscover\Shoppingcart\Facades;
+<?php namespace Syscover\ShoppingCart\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
