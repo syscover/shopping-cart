@@ -189,6 +189,44 @@ CartProvider::instance('wishlist')->getCartItems();
 ```
 
 
+We have created PriceRule object to apply discounts over items cart
+* name:string = Name of price rule
+* description:string = Description of rule
+* discountType:int = You have various options, below you have all options 
+* combinable:boolean [default true] = Set if this price rule can to have other one in the same cart 
+* discountPercentage [default null] = Set a rate percentage to discount
+* discountFixed [default null] = Set a discount amount fixed
+* maximumDiscountAmount [default null] = If you choose a discount percentage, you can set a maximum amount to discount
+* applyShippingAmount [default false] = Check this option if you want apply discount to shipping amount too
+* freeShipping [default false] = Check this option to set a rule whith free shipping
+
+With this constants from PriceRule class, you can define discount type
+```
+WITHOUT_DISCOUNT
+DISCOUNT_PERCENTAGE_SUBTOTAL
+DISCOUNT_FIXED_AMOUNT_SUBTOTAL
+DISCOUNT_PERCENTAGE_TOTAL
+DISCOUNT_FIXED_AMOUNT_TOTAL
+```
+
+To set price rules you can use addCartPriceRule methop
+```
+    CartProvider::instance()->addCartPriceRule(
+        new PriceRule(
+            'My first price rule',
+            'For being a good customer',
+            PriceRule::DISCOUNT_PERCENTAGE_SUBTOTAL,
+            false,
+            10.00,
+            null,
+            100.00,
+            false
+        )
+    );
+```
+
+
+
 
 
 

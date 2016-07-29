@@ -165,7 +165,7 @@ class Item implements Arrayable
     /**
      * magic method to make accessing the total, tax and subtotal properties
      *
-     * @param   string $attribute
+     * @param   string      $attribute
      * @return  float|null
      */
     public function __get($attribute)
@@ -181,10 +181,10 @@ class Item implements Arrayable
     /**
      * Returns the formatted unit price.
      *
-     * @param int       $decimals
-     * @param string    $decimalPoint
-     * @param string    $thousandSeperator
-     * @return string
+     * @param   int       $decimals
+     * @param   string    $decimalPoint
+     * @param   string    $thousandSeperator
+     * @return  string
      */
     public function getPrice($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
@@ -194,10 +194,10 @@ class Item implements Arrayable
     /**
      * Returns the formatted sum tax rate.
      *
-     * @param int       $decimals
-     * @param string    $decimalPoint
-     * @param string    $thousandSeperator
-     * @return string
+     * @param   int       $decimals
+     * @param   string    $decimalPoint
+     * @param   string    $thousandSeperator
+     * @return  string
      */
     public function getTaxRate($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
@@ -221,10 +221,10 @@ class Item implements Arrayable
     /**
      * Returns the formatted tax amount.
      *
-     * @param int       $decimals
-     * @param string    $decimalPoint
-     * @param string    $thousandSeperator
-     * @return string
+     * @param   int       $decimals
+     * @param   string    $decimalPoint
+     * @param   string    $thousandSeperator
+     * @return  string
      */
     public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
@@ -262,9 +262,9 @@ class Item implements Arrayable
     /**
      * Generate a unique id for the cart item.
      *
-     * @param string $id
-     * @param array  $options
-     * @return string
+     * @param   string  $id
+     * @param   array   $options
+     * @return  string
      */
     protected function generateRowId($id, array $options)
     {
@@ -285,8 +285,8 @@ class Item implements Arrayable
     /**
      * Set the quantity for this cart item.
      *
-     * @param int|float $quantity
-     * @return  $this
+     * @param   int|float $quantity
+     * @return  \Syscover\ShoppingCart\Item
      */
     public function setQuantity($quantity)
     {
@@ -312,8 +312,8 @@ class Item implements Arrayable
     /**
      * Set the discount percentage over this cart item.
      *
-     * @param   int|float $discountPercentage
-     * @return  $this
+     * @param   int|float   $discountPercentage
+     * @return  \Syscover\ShoppingCart\Item
      */
     public function setDiscountPercentage($discountPercentage)
     {
@@ -329,7 +329,9 @@ class Item implements Arrayable
     }
 
     /**
-     *  calculate all amounts, this function is called, when change any property from cartItem
+     * Calculate all amounts, this function is called, when change any property from cartItem
+     *
+     * @return void
      */
     private function calculateAmounts()
     {
@@ -369,16 +371,20 @@ class Item implements Arrayable
             $this->taxAmount    = $taxRules->sum('taxAmount');
             $this->subtotal     = $this->total - $this->taxAmount;
 
-            // calculate discount amount if has discount percentage
+            // calculate discount and tax over subtotal amount, if has discount percentage
             if($this->discountPercentage > 0)
             {
                 $this->discountAmount = ($this->subtotal * $this->discountPercentage) / 100;
-
                 $this->calculateAmountsWithPriceWithoutTax();
             }
         }
     }
 
+    /**
+     * Calculate discount and tax over subtotal amount
+     *
+     * @return void
+     */
     private function calculateAmountsWithPriceWithoutTax()
     {
         if($this->taxRules === null || $this->taxRules->count() == 0)
