@@ -448,6 +448,10 @@ class Cart
                 $cartPriceRule->discountAmount = $cartPriceRule->discountFixed;
             }
 
+
+
+
+
             // check if price rule is combinable
             if(! $cartPriceRule->combinable)
                 $this->hasCartPriceRuleNotCombinable = true;

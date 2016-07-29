@@ -57,21 +57,20 @@ class TaxRule
         if (empty($name))
             throw new \InvalidArgumentException('Please supply a valid name.');
 
-        if (strlen($priority) < 0 || !is_numeric($priority))
-            throw new \InvalidArgumentException('Please supply a valid priority.');
-
-        if (strlen($sortOrder) < 0 || !is_numeric($sortOrder))
-            throw new \InvalidArgumentException('Please supply a valid sortOrder.');
-
-        if (strlen($sortOrder) < 0 || !is_numeric($sortOrder))
+        if (strlen($taxRate) < 0 || ! is_numeric($taxRate))
             throw new \InvalidArgumentException('Please supply a valid taxRate.');
 
+        if (strlen($priority) < 0 || ! is_numeric($priority))
+            throw new \InvalidArgumentException('Please supply a valid priority.');
+
+        if (strlen($sortOrder) < 0 || ! is_numeric($sortOrder))
+            throw new \InvalidArgumentException('Please supply a valid sortOrder.');
 
         $this->id           = $this->generateId($name, $priority);
         $this->name         = $name;
-        $this->priority     = $priority;
-        $this->sortOrder    = $sortOrder;
-        $this->taxRate      = $taxRate;
+        $this->priority     = (int)$priority;
+        $this->sortOrder    = (int)$sortOrder;
+        $this->taxRate      = (float)$taxRate;
     }
 
     /**
