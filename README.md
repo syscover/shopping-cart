@@ -111,18 +111,27 @@ CartProvider::instance()->remove($rowId);
 ```
 
 
+If you want to get the cart items, you have getCartItems method. 
+This method will return a Collection of CartItems which you can iterate over and show the content to your customers.
+```
+CartProvider::instance()->getCartItems();
+```
+
+
+If you want to get quantity from each items, you can use getQuantity method over each item
+```
+foreach(CartProvider::instance()->getCartItems() as $item)
+{
+  $item->getQuantity();
+}
+```
+
+
 If you want to get an item from the cart using its rowId, you can simply call the get() method on the cart and pass it the rowId.
 ```
 $rowId = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';
 
 CartProvider::instance()->getCartItems()->get($rowId);
-```
-
-
-If you want to get the cart items, you have getCartItems method. 
-This method will return a Collection of CartItems which you can iterate over and show the content to your customers.
-```
-CartProvider::instance()->getCartItems();
 ```
 
 
@@ -216,11 +225,8 @@ To set price rules you can use addCartPriceRule methop
             'My first price rule',
             'For being a good customer',
             PriceRule::DISCOUNT_PERCENTAGE_SUBTOTAL,
-            false,
-            10.00,
-            null,
-            100.00,
-            false
+            true,
+            10.00
         )
     );
 ```
