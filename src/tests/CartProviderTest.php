@@ -141,7 +141,7 @@ class CartProviderTest extends TestCase
             new PriceRule(
                 'My first price rule',
                 'For being a good customer',
-                PriceRule::DISCOUNT_PERCENTAGE_SUBTOTAL,
+                PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE,
                 true,
                 10.00
             )

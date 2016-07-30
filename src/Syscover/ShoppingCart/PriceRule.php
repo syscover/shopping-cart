@@ -3,10 +3,10 @@
 class PriceRule
 {
     const WITHOUT_DISCOUNT                  = 1;
-    const DISCOUNT_PERCENTAGE_SUBTOTAL      = 2;
-    const DISCOUNT_FIXED_AMOUNT_SUBTOTAL    = 3;
-    const DISCOUNT_PERCENTAGE_TOTAL         = 4;
-    const DISCOUNT_FIXED_AMOUNT_TOTAL       = 5;
+    const DISCOUNT_SUBTOTAL_PERCENTAGE      = 2;
+    const DISCOUNT_SUBTOTAL_FIXED_AMOUNT    = 3;
+    const DISCOUNT_TOTAL_PERCENTAGE         = 4;
+    const DISCOUNT_TOTAL_FIXED_AMOUNT       = 5;
 
     /**
      * id price rule
@@ -44,21 +44,21 @@ class PriceRule
     public $combinable;
 
     /**
-     * Percentage of discount if discount type is DISCOUNT_PERCENTAGE_SUBTOTAL
+     * Percentage of discount if discount type is DISCOUNT_SUBTOTAL_PERCENTAGE
      *
      * @var float
      */
     public $discountPercentage;
 
     /**
-     * Discount amount if discount type is DISCOUNT_FIXED_AMOUNT_SUBTOTAL
+     * Discount amount if discount type is DISCOUNT_SUBTOTAL_FIXED_AMOUNT
      *
      * @var float
      */
     public $discountFixed;
 
     /**
-     * Maximum discount amount if discount type is DISCOUNT_FIXED_AMOUNT_SUBTOTAL
+     * Maximum discount amount if discount type is DISCOUNT_SUBTOTAL_FIXED_AMOUNT
      *
      * @var float
      */

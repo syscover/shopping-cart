@@ -212,10 +212,10 @@ We have created PriceRule object to apply discounts over items cart
 With this constants from PriceRule class, you can define discount type
 ```
 WITHOUT_DISCOUNT
-DISCOUNT_PERCENTAGE_SUBTOTAL
-DISCOUNT_FIXED_AMOUNT_SUBTOTAL
-DISCOUNT_PERCENTAGE_TOTAL
-DISCOUNT_FIXED_AMOUNT_TOTAL
+DISCOUNT_SUBTOTAL_PERCENTAGE
+DISCOUNT_SUBTOTAL_FIXED_AMOUNT
+DISCOUNT_TOTAL_PERCENTAGE
+DISCOUNT_TOTAL_FIXED_AMOUNT
 ```
 
 To set price rules you can use addCartPriceRule methop
@@ -224,7 +224,7 @@ To set price rules you can use addCartPriceRule methop
         new PriceRule(
             'My first price rule',
             'For being a good customer',
-            PriceRule::DISCOUNT_PERCENTAGE_SUBTOTAL,
+            PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE,
             true,
             10.00
         )
