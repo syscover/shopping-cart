@@ -460,6 +460,23 @@ class Cart
     }
 
     /**
+     * Implement all PriceRules in one cartItem
+     *
+     * @return void
+     */
+    private function applyCartPricesRulesToCartItem($rowId)
+    {
+        foreach($this->cartPriceRules as $cartPriceRule)
+        {
+            // discount by percentage
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)
+            {
+                $this->cartItems->get($rowId)->setDiscountPercentage($cartPriceRule->discountPercentage);
+            }
+        }
+    }
+
+    /**
      * Implement PriceRule in all cartItems
      *
      * @param   \Syscover\ShoppingCart\PriceRule    $priceRule
@@ -486,22 +503,7 @@ class Cart
         }
     }
 
-    /**
-     * Implement all PriceRules in one cartItem
-     *
-     * @return void
-     */
-    private function applyCartPricesRulesToCartItem($rowId)
-    {
-        foreach($this->cartPriceRules as $cartPriceRule)
-        {
-            // discount by percentage
-            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)
-            {
-                $this->cartItems->get($rowId)->setDiscountPercentage($cartPriceRule->discountPercentage);
-            }
-        }
-    }
+
 
 
 
