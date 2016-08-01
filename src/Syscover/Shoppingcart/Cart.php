@@ -387,8 +387,7 @@ class Cart
         // check if id cart price rule exist
         if($this->cartPriceRules->has($priceRule->id))
         {
-            // error, este descuento ya existe en el carro
-            dd('cupon ya existe');
+            throw new \InvalidArgumentException('This coupon already exist in cart prices rules.');
         }
         else
         {

@@ -231,7 +231,11 @@ To set price rules you can use addCartPriceRule methop
     );
 ```
 
+Scenarios to consider when applying to the pricing rules
+* We have create discounts over total and subtotal amounts, although the result is the same, the quantity to discount change depend of kind of discount
 
+
+* If we create discounts over subtotal and total price, first will apply discount over subtotal price and after, the discount over total price
 
 
 
