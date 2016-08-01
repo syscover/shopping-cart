@@ -128,7 +128,7 @@ class CartProviderTest extends TestCase
         }
     }
 
-    public function testCartCanAddWithTaxRulesWithDifferentPrioritiesAndDiscountPercentageSubtotal()
+    public function testCartCanAddWithTaxRulesWithDifferentPrioritiesAndDiscountSubtotalPercentage()
     {
         $this->expectsEvents('cart.added');
 
@@ -165,13 +165,14 @@ class CartProviderTest extends TestCase
             $this->assertEquals('10', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxRate());
             $this->assertEquals('OTHER IVA', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->name);
         }
-        elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
+
+        if(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
         {
             $this->assertEquals('75,13', CartProvider::instance()->getCartItems()->first()->getSubtotal());
             $this->assertEquals(75.1314800901577797276331693865358829498291015625, CartProvider::instance()->getCartItems()->first()->subtotal);
 
-            $this->assertEquals(10, CartProvider::instance()->getCartItems()->first()->discountPercentage);
-            $this->assertEquals('10', CartProvider::instance()->getCartItems()->first()->getDiscountPercentage());
+            $this->assertEquals(10, CartProvider::instance()->getCartItems()->first()->discountSubtotalPercentage);
+            $this->assertEquals('10', CartProvider::instance()->getCartItems()->first()->getDiscountSubtotalPercentage());
             $this->assertEquals(7.51314800902, CartProvider::instance()->getCartItems()->first()->discountAmount);
             $this->assertEquals('7,51', CartProvider::instance()->getCartItems()->first()->getDiscountAmount());
 
