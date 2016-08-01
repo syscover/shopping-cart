@@ -325,7 +325,6 @@ class Item implements Arrayable
         return $this;
     }
 
-
     /**
      * Get format discountSubtotalPercentage over this cart item.
      *
@@ -417,9 +416,8 @@ class Item implements Arrayable
         }
         elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
         {
-            if($this->total == 0) //todo,
-                //calculate total
-                $this->total = $this->quantity * $this->price;
+            //calculate total
+            $this->total = $this->quantity * $this->price;
 
             // calculate discount and tax over total amount, if has discount percentage
             if($this->discountTotalPercentage > 0)
@@ -436,8 +434,6 @@ class Item implements Arrayable
                 $this->discountSubtotalAmount = ($this->subtotal * $this->discountSubtotalPercentage) / 100;
                 $this->calculateAmountsOverPriceWithoutTax();
             }
-
-
         }
     }
 
@@ -524,6 +520,13 @@ class Item implements Arrayable
         $this->subtotal     = $this->total - $this->taxAmount;
     }
 
+
+
+
+
+
+
+
     /**
      * Add TaxRule to cartItemTaxRules object
      *
@@ -546,16 +549,6 @@ class Item implements Arrayable
         $this->taxRules->put($taxRule->id, $taxRule);
     }
 
-
-
-
-
-
-
-
-
-
-
     /**
      * Reset tax amount before calculate
      *
@@ -568,7 +561,7 @@ class Item implements Arrayable
             $taxRule->taxAmount = 0;
         }
     }
-    
+
     /**
      * Get the instance as an array.
      *
