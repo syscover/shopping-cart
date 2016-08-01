@@ -340,6 +340,19 @@ class Item implements Arrayable
     }
 
     /**
+     * Get format discountTotalPercentage over this cart item.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  string
+     */
+    public function getDiscountTotalPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->discountTotalPercentage, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
      * Set subtotal discount percentage over this cart item.
      *
      * @param   int|float   $discountSubtotalPercentage
@@ -404,8 +417,9 @@ class Item implements Arrayable
         }
         elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
         {
-            //calculate total
-            $this->total = $this->quantity * $this->price;
+            if($this->total == 0) //todo,
+                //calculate total
+                $this->total = $this->quantity * $this->price;
 
             // calculate discount and tax over total amount, if has discount percentage
             if($this->discountTotalPercentage > 0)
