@@ -441,16 +441,7 @@ class Item implements Arrayable
         }
     }
 
-    /**
-     *
-     */
-    private function resetTaxAmounts()
-    {
-        foreach ($this->taxRules as &$taxRule)
-        {
-            $taxRule->taxAmount = 0;
-        }
-    }
+
 
     /**
      * Calculate discount and tax over subtotal amount
@@ -565,10 +556,19 @@ class Item implements Arrayable
 
 
 
-
-
-
-
+    /**
+     * Reset tax amount before calculate
+     *
+     * @return void
+     */
+    private function resetTaxAmounts()
+    {
+        foreach ($this->taxRules as &$taxRule)
+        {
+            $taxRule->taxAmount = 0;
+        }
+    }
+    
     /**
      * Get the instance as an array.
      *
