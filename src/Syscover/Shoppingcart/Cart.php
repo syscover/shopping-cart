@@ -423,8 +423,10 @@ class Cart
         if($priceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)
         {
             $this->cartItems->transform(function ($item, $key) use ($priceRule) {
-                // to set discount percentage, we calculate all amounts too
-                return $item->setDiscountSubtotalPercentage($priceRule->discountPercentage + $item->discountSubtotalPercentage);
+                // add discount percentage to item discount subtotal percentage
+                return $item->setDiscountSubtotalPercentage(
+                    $priceRule->discountPercentage + $item->discountSubtotalPercentage // add percentage to existing percentage
+                );
             });
         }
 
@@ -432,25 +434,69 @@ class Cart
         if($priceRule->discountType == PriceRule::DISCOUNT_TOTAL_PERCENTAGE)
         {
             $this->cartItems->transform(function ($item, $key) use ($priceRule) {
-                // to set discount percentage, we calculate all amounts too
-                return $item->setDiscountTotalPercentage($priceRule->discountPercentage + $item->discountTotalPercentage);
+                // add discount percentage to item discount total percentage
+                return $item->setDiscountTotalPercentage(
+                    $priceRule->discountPercentage + $item->discountTotalPercentage // add percentage to existing percentage
+                );
             });
         }
 
         // fixed discount over subtotal
         if($priceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_FIXED_AMOUNT)
         {
-            // sorts cartItems from highest to lowest tax rate value
-//            $cartItems = $this->cartItems->sortByDesc(function ($cartItem, $key) {
-//                return $cartItem->taxRules->sum('taxRate');
-//            })->groupBy(function($cartItem, $key) {
-//                return strval($cartItem->taxRules->sum('taxRate'));
-//            })->map(function($cartItems, $key){
-//                return $cartItems->sortBy('subtotal');
-//            });
+            // sorts cartItems from highest to lowest tax rate value and sorts  lowest to highest subtotal
+            $cartItems = $this->cartItems->sortByDesc(function ($cartItem, $key) {
+                return $cartItem->taxRules->sum('taxRate');
+            })->groupBy(function($cartItem, $key) {
+                return strval($cartItem->taxRules->sum('taxRate'));
+            })->map(function($cartItems, $key){
+                return $cartItems->sortBy('subtotal');
+            });
+
+            $amountToDiscount = $priceRule->discountFixed;
 
 
-            //dd($cartItems);
+
+            foreach ($cartItems as $cartItemsGroup)
+            {
+                foreach ($cartItemsGroup as $cartItem)
+                {
+                    if($cartItem->subtotalWithDiscounts  - $amountToDiscount > 0)
+                    {
+                        $cartItem->setDiscountSubtotalFixed($amountToDiscount);
+
+                    }
+                }
+            }
+
+
+            // todo, comprobar
+            $cartItems = $cartItems->map(function($cartItems, $key) use ($amountToDiscount) {
+                return $cartItems->map(function($cartItem, $key) use ($amountToDiscount) {
+                    if($cartItem->subtotal > $amountToDiscount)
+                    {
+                        $cartItem->discountSubtotalFixedAmount = $amountToDiscount;
+
+                        $cartItem->setDiscountSubtotalFixed($amountToDiscount);
+
+                        $amountToDiscount = 0;
+
+                        return $cartItem;
+                    }
+                    else
+                    {
+                        $cartItem->discountSubtotalFixedAmount = $cartItem->subtotal;
+                        $amountToDiscount -= $cartItem->subtotal;
+
+                        return $cartItem;
+                    }
+                });
+            });
+
+
+
+
+            dd($cartItems);
         }
     }
 
