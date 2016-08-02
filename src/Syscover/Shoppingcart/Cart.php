@@ -338,28 +338,27 @@ class Cart
      */
     public function getTaxRules()
     {
-        $cartItems          = $this->cartItems;
-        $taxRulesResponse   = new CartItemTaxRules();
+        $taxRules = new CartItemTaxRules();
 
         foreach ($this->cartItems as $cartItem)
         {
             foreach ($cartItem->taxRules as $taxRule)
             {
-                if($taxRulesResponse->has($taxRule->id))
+                if($taxRules->has($taxRule->id))
                 {
                     // if find any tax with the same ID, sum yours rates
-                    $taxRulesResponse->get($taxRule->id)->taxAmount += $taxRule->taxAmount;
+                    $taxRules->get($taxRule->id)->taxAmount += $taxRule->taxAmount;
                 }
                 else
                 {
                     // add new tax rule, clone object because otherwise object save reference with taxRule from carItem
                     // everytime that we change taxAmount it would be changed in cartItem
-                    $taxRulesResponse->put($taxRule->id, clone $taxRule);
+                    $taxRules->put($taxRule->id, clone $taxRule);
                 }
             }
         }
 
-        return $taxRulesResponse;
+        return $taxRules;
     }
 
     /**
