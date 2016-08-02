@@ -82,13 +82,6 @@ class Item implements Arrayable
     public $total;
 
     /**
-     * The quantity of total before discount, necessary for calculate from various calls.
-     *
-     * @var int|float
-     */
-    public $totalBeforeDiscount;
-
-    /**
      * Discount type of price rule
      *
      * @var int
@@ -128,11 +121,12 @@ class Item implements Arrayable
      *
      * @var float
      */
-    public $discountFixed = 0;
+    public $discountSubtotalFixedAmount = 0;
 
 
     /**
      * CartItem constructor.
+     * When we create a new Item, automatically create all amounts for this Item, to call method setQuantity
      *
      * @param int|string                            $id
      * @param string                                $name
@@ -178,28 +172,6 @@ class Item implements Arrayable
     }
 
     /**
-     * Add TaxRule to cartItemTaxRules object
-     *
-     * @param   array|\Syscover\ShoppingCart\TaxRule        $taxRule
-     * @return  \Syscover\ShoppingCart\CartItemTaxRules
-     */
-    private function addTaxRule($taxRule)
-    {
-        if(is_array($taxRule))
-        {
-            return array_map(function ($item) {
-                return $this->addTaxRule($item);
-            }, $taxRule);
-        }
-
-        // sum rates if exist a tax rule with de same id
-        if($this->taxRules->has($taxRule->id))
-            $taxRule->taxRate = $taxRule->taxRate + $this->taxRules->get($taxRule->id)->taxRate;
-
-        $this->taxRules->put($taxRule->id, $taxRule);
-    }
-
-    /**
      * magic method to make accessing the total, tax and subtotal properties
      *
      * @param   string      $attribute
@@ -237,6 +209,28 @@ class Item implements Arrayable
             return $this->taxRules->sum('taxAmount');
         }
         return null;
+    }
+
+    /**
+     * Add TaxRule to cartItemTaxRules object
+     *
+     * @param   array|\Syscover\ShoppingCart\TaxRule        $taxRule
+     * @return  \Syscover\ShoppingCart\CartItemTaxRules
+     */
+    private function addTaxRule($taxRule)
+    {
+        if(is_array($taxRule))
+        {
+            return array_map(function ($item) {
+                return $this->addTaxRule($item);
+            }, $taxRule);
+        }
+
+        // sum rates if exist a tax rule with de same id
+        if($this->taxRules->has($taxRule->id))
+            $taxRule->taxRate = $taxRule->taxRate + $this->taxRules->get($taxRule->id)->taxRate;
+
+        $this->taxRules->put($taxRule->id, $taxRule);
     }
 
     /**
@@ -482,10 +476,10 @@ class Item implements Arrayable
             // calculate all amounts for price with tax
             $this->subtotal = $this->calculateSubtotalAndTaxOverTotal($this->total);
 
-            // to get subtotal without discount, subtotal is a amount without any discount
-            $this->subtotal = (($this->subtotal * $this->quantity) * 100) / $this->total;
+            // to get subtotal without discount, subtotal is the amount without any discount
+            $this->subtotal = ($this->subtotal * ($this->quantity * $this->price)) / $this->total;
 
-
+            //dd($this->subtotal);
             // calculate discount subtotal amount
             if($this->discountSubtotalPercentage > 0 )
             {
