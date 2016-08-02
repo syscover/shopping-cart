@@ -478,7 +478,6 @@ class Cart
                         $cartItem->setDiscountSubtotalFixed(
                             $cartItem->discountSubtotalFixedAmount + $amountToDiscount
                         );
-
                     }
                 }
                 if($amountToDiscount == 0)
@@ -605,6 +604,14 @@ class Cart
                 $cartPriceRule->discountAmount = $discountAmount;
             }
 
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_FIXED_AMOUNT)
+            {
+
+            }
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_TOTAL_FIXED_AMOUNT)
+            {
+
+            }
 
 
 
@@ -626,24 +633,9 @@ class Cart
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ////////////////////////////////////////////////////
-
+    // SHIPPING
+    ////////////////////////////////////////////////////
 
 //
 //
