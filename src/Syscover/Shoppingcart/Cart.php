@@ -230,7 +230,7 @@ class Cart
         {
             $cartItems = $this->cartItems;
             return $cartItems->reduce(function ($discountSubtotalAmount, Item $item) {
-                return $discountSubtotalAmount + $item->discountSubtotalAmount;
+                return $discountSubtotalAmount + $item->discountSubtotalPercentageAmount;
             }, 0);
         }
 
@@ -238,7 +238,7 @@ class Cart
         {
             $cartItems = $this->cartItems;
             return $cartItems->reduce(function ($discountTotalAmount, Item $item) {
-                return $discountTotalAmount + $item->discountTotalAmount;
+                return $discountTotalAmount + $item->discountTotalPercentageAmount;
             }, 0);
         }
 
@@ -441,10 +441,10 @@ class Cart
             });
         }
 
-        // fixed discount over subtotal
+        // set fixed discounts over subtotal
         if($priceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_FIXED_AMOUNT)
         {
-            // sorts cartItems from highest to lowest tax rate value and sorts  lowest to highest subtotal
+            // sorts cartItems from highest to lowest tax rate value and sorts lowest to highest subtotal
             $cartItems = $this->cartItems->sortByDesc(function ($cartItem, $key) {
                 return $cartItem->taxRules->sum('taxRate');
             })->groupBy(function($cartItem, $key) {
@@ -453,55 +453,87 @@ class Cart
                 return $cartItems->sortBy('subtotal');
             });
 
+            // get discount amount to discount
             $amountToDiscount = $priceRule->discountFixed;
 
-
-
+            // we go over cartItems discount fixed amount
             foreach ($cartItems as $cartItemsGroup)
             {
                 foreach ($cartItemsGroup as $cartItem)
                 {
-                    if($cartItem->subtotalWithDiscounts  - $amountToDiscount > 0)
+                    if($cartItem->subtotalWithDiscounts - $amountToDiscount >= 0)
                     {
-                        $cartItem->setDiscountSubtotalFixed($amountToDiscount);
-
-                    }
-                }
-            }
-
-
-            // todo, comprobar
-            $cartItems = $cartItems->map(function($cartItems, $key) use ($amountToDiscount) {
-                return $cartItems->map(function($cartItem, $key) use ($amountToDiscount) {
-                    if($cartItem->subtotal > $amountToDiscount)
-                    {
-                        $cartItem->discountSubtotalFixedAmount = $amountToDiscount;
-
-                        $cartItem->setDiscountSubtotalFixed($amountToDiscount);
-
+                        // amount to discount is less or equal than subtotal
+                        $cartItem->setDiscountSubtotalFixed(
+                            $cartItem->discountSubtotalFixedAmount + $amountToDiscount
+                        );
                         $amountToDiscount = 0;
-
-                        return $cartItem;
+                        break;
                     }
                     else
                     {
-                        $cartItem->discountSubtotalFixedAmount = $cartItem->subtotal;
-                        $amountToDiscount -= $cartItem->subtotal;
+                        // amount to discount is highest than subtotal
+                        $amountToDiscount -= $cartItem->subtotalWithDiscounts;
 
-                        return $cartItem;
+                        $cartItem->setDiscountSubtotalFixed(
+                            $cartItem->discountSubtotalFixedAmount + $amountToDiscount
+                        );
+
                     }
-                });
+                }
+                if($amountToDiscount == 0)
+                    break;
+            }
+        }
+
+        // set fixed discounts over total
+        if($priceRule->discountType == PriceRule::DISCOUNT_TOTAL_FIXED_AMOUNT)
+        {
+            // sorts cartItems from highest to lowest tax rate value and sorts lowest to highest total
+            $cartItems = $this->cartItems->sortByDesc(function ($cartItem, $key) {
+                return $cartItem->taxRules->sum('taxRate');
+            })->groupBy(function($cartItem, $key) {
+                return strval($cartItem->taxRules->sum('taxRate'));
+            })->map(function($cartItems, $key){
+                return $cartItems->sortBy('total');
             });
 
+            // get discount amount to discount
+            $amountToDiscount = $priceRule->discountFixed;
 
+            // we go over cartItems discount fixed amount
+            foreach ($cartItems as $cartItemsGroup)
+            {
+                foreach ($cartItemsGroup as $cartItem)
+                {
+                    if($cartItem->total - $amountToDiscount >= 0)
+                    {
+                        // amount to discount is less or equal than total
+                        $cartItem->setDiscountTotalFixed(
+                            $cartItem->discountTotalFixedAmount + $amountToDiscount
+                        );
+                        $amountToDiscount = 0;
+                        break;
+                    }
+                    else
+                    {
+                        // amount to discount is highest than subtotal
+                        $amountToDiscount -= $cartItem->total;
 
-
-            dd($cartItems);
+                        $cartItem->setDiscountTotalFixed(
+                            $cartItem->discountTotalFixedAmount + $amountToDiscount
+                        );
+                    }
+                }
+                if($amountToDiscount == 0)
+                    break;
+            }
         }
     }
 
     /**
-     * Implement all PriceRules in one cartItem
+     * Implement all percentages PriceRules in one cartItem.
+     * This method is used when add new carItem to existing cartItemCollection
      *
      * @return void
      */

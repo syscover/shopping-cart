@@ -130,6 +130,13 @@ class Item implements Arrayable
      */
     private $discountSubtotalFixedAmount = 0;
 
+    /**
+     * Discount amount if discount type is DISCOUNT_TOTAL_FIXED_AMOUNT
+     *
+     * @var float
+     */
+    private $discountTotalFixedAmount = 0;
+
 
     /**
      * CartItem constructor.
@@ -206,9 +213,23 @@ class Item implements Arrayable
             return $this->discountTotalPercentageAmount;
         }
 
+        if($attribute === 'discountSubtotalFixedAmount')
+        {
+            return $this->discountSubtotalFixedAmount;
+        }
+
+        if($attribute === 'discountTotalFixedAmount')
+        {
+            return $this->discountTotalFixedAmount;
+        }
+
         if($attribute === 'discountAmount')
         {
-            return $this->discountSubtotalPercentageAmount + $this->discountTotalPercentageAmount;
+            return
+                $this->discountSubtotalPercentageAmount +
+                $this->discountTotalPercentageAmount +
+                $this->discountSubtotalFixedAmount +
+                $this->discountTotalFixedAmount;
         }
 
         if($attribute === 'taxAmount')
@@ -448,13 +469,6 @@ class Item implements Arrayable
         return $this;
     }
 
-
-
-// todo, comprobar
-
-
-
-
     /**
      * Set subtotal discount fixed over this cart item.
      *
@@ -466,7 +480,7 @@ class Item implements Arrayable
         if($discountSubtotalFixedAmount !== 0 && (empty($discountSubtotalFixedAmount) || ! is_numeric($discountSubtotalFixedAmount)))
             throw new \InvalidArgumentException('Please supply a valid discount percentage.');
 
-        // set discount subtotal percentage
+        // set discount subtotal fixed amount
         $this->discountSubtotalFixedAmount = (float) $discountSubtotalFixedAmount;
 
         $this->calculateAmounts();
@@ -477,19 +491,16 @@ class Item implements Arrayable
     /**
      * Set total discount percentage over this cart item.
      *
-     * @param   int|float   $discountTotalPercentage
+     * @param   int|float   $discountTotalFixedAmount
      * @return  \Syscover\ShoppingCart\Item
      */
-    public function setDiscountTotalFixed($discountTotalPercentage)
+    public function setDiscountTotalFixed($discountTotalFixedAmount)
     {
-        if($discountTotalPercentage !== 0 && (empty($discountTotalPercentage) || ! is_numeric($discountTotalPercentage)))
+        if($discountTotalFixedAmount !== 0 && (empty($discountTotalFixedAmount) || ! is_numeric($discountTotalFixedAmount)))
             throw new \InvalidArgumentException('Please supply a valid discount percentage.');
 
-        if($this->discountSubtotalPercentage > 0)
-            throw new \InvalidArgumentException('You can\'t apply discount over total, when you already have discounts over subtotal.');
-
-        // set discount total percentage
-        $this->discountTotalPercentage = (float) $discountTotalPercentage;
+        // set discount total fixed amount
+        $this->discountTotalFixedAmount = (float) $discountTotalFixedAmount;
 
         $this->calculateAmounts();
 
@@ -535,12 +546,15 @@ class Item implements Arrayable
             // calculate total
             $this->total = $this->quantity * $this->price;
 
-            if($this->discountTotalPercentage > 0)
+            if($this->discountTotalPercentage > 0 || $this->discountTotalFixedAmount > 0)
             {
-                $this->discountTotalPercentageAmount  = ($this->total * $this->discountTotalPercentage) / 100;
+                $this->discountTotalPercentageAmount  = (($this->total - $this->discountTotalFixedAmount) * $this->discountTotalPercentage) / 100;
+
+                // sum all discounts over total
+                $discountTotalAmount = $this->discountTotalPercentageAmount + $this->discountTotalFixedAmount;
 
                 // calculate again total amount less discount with primary data, (quantity and price)
-                $this->total = ($this->quantity * $this->price) - $this->discountTotalPercentageAmount;
+                $this->total = ($this->quantity * $this->price) - $discountTotalAmount;
             }
 
             // calculate all amounts for price with tax
@@ -550,13 +564,17 @@ class Item implements Arrayable
             $this->subtotal = ($this->subtotalWithDiscounts * ($this->quantity * $this->price)) / $this->total;
 
             // calculate discount subtotal amount
-            if($this->discountSubtotalPercentage > 0 )
+            if($this->discountSubtotalPercentage > 0 || $this->discountSubtotalFixedAmount > 0)
             {
-                $this->discountSubtotalPercentageAmount = ($this->subtotal * $this->discountSubtotalPercentage) / 100;
+                // calculate amount after fixed discount
+                $this->discountSubtotalPercentageAmount = (($this->subtotal - $this->discountSubtotalFixedAmount) * $this->discountSubtotalPercentage) / 100;
 
-                $this->subtotalWithDiscounts = $this->subtotal - $this->discountSubtotalPercentageAmount;
+                // sum all discounts over subtotal
+                $discountSubtotalAmount = $this->discountSubtotalPercentageAmount + $this->discountSubtotalFixedAmount;
 
-                $this->total = $this->calculateTotalAndTaxOverSubtotal($this->subtotal - $this->discountSubtotalPercentageAmount);
+                $this->subtotalWithDiscounts = $this->subtotal - $discountSubtotalAmount;
+
+                $this->total = $this->calculateTotalAndTaxOverSubtotal($this->subtotal - $discountSubtotalAmount);
             }
         }
     }
