@@ -483,7 +483,7 @@ class Item implements Arrayable
             $this->subtotal = $this->calculateSubtotalAndTaxOverTotal($this->total);
 
             // to get subtotal without discount, subtotal is a amount without any discount
-            $this->subtotal = ($this->subtotal * 100) / $this->total;
+            $this->subtotal = (($this->subtotal * $this->quantity) * 100) / $this->total;
 
 
             // calculate discount subtotal amount
