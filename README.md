@@ -232,7 +232,7 @@ To set price rules you can use addCartPriceRule methop
 ```
 
 Scenarios to consider when applying to the pricing rules
-* If we create discounts over subtotal and total price combinables, first will apply discount over subtotal price and after, the discount over total price
+* We have created discounts over subtotal and total price, but you can not apply both discounts to the same time.
 
 
 

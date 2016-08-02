@@ -79,14 +79,14 @@ class Item implements Arrayable
      *
      * @var int|float
      */
-    public $taxAmount;
+    public $total;
 
     /**
-     * The quantity for this cart item.
+     * The quantity of total before discount, necessary for calculate from various calls.
      *
      * @var int|float
      */
-    public $total;
+    public $totalBeforeDiscount;
 
     /**
      * Discount type of price rule
@@ -178,6 +178,28 @@ class Item implements Arrayable
     }
 
     /**
+     * Add TaxRule to cartItemTaxRules object
+     *
+     * @param   array|\Syscover\ShoppingCart\TaxRule        $taxRule
+     * @return  \Syscover\ShoppingCart\CartItemTaxRules
+     */
+    private function addTaxRule($taxRule)
+    {
+        if(is_array($taxRule))
+        {
+            return array_map(function ($item) {
+                return $this->addTaxRule($item);
+            }, $taxRule);
+        }
+
+        // sum rates if exist a tax rule with de same id
+        if($this->taxRules->has($taxRule->id))
+            $taxRule->taxRate = $taxRule->taxRate + $this->taxRules->get($taxRule->id)->taxRate;
+
+        $this->taxRules->put($taxRule->id, $taxRule);
+    }
+
+    /**
      * magic method to make accessing the total, tax and subtotal properties
      *
      * @param   string      $attribute
@@ -195,9 +217,24 @@ class Item implements Arrayable
             return $this->discountTotalPercentage;
         }
 
+        if($attribute === 'discountSubtotalAmount')
+        {
+            return $this->discountSubtotalAmount;
+        }
+
+        if($attribute === 'discountTotalAmount')
+        {
+            return $this->discountTotalAmount;
+        }
+
         if($attribute === 'discountAmount')
         {
             return $this->discountSubtotalAmount + $this->discountTotalAmount;
+        }
+
+        if($attribute === 'taxAmount')
+        {
+            return $this->taxRules->sum('taxAmount');
         }
         return null;
     }
@@ -320,6 +357,7 @@ class Item implements Arrayable
             throw new \InvalidArgumentException('Please supply a valid quantity.');
 
         $this->quantity = $quantity;
+
         $this->calculateAmounts();
 
         return $this;
@@ -362,6 +400,9 @@ class Item implements Arrayable
         if($discountSubtotalPercentage !== 0 && (empty($discountSubtotalPercentage) || ! is_numeric($discountSubtotalPercentage)))
             throw new \InvalidArgumentException('Please supply a valid discount percentage.');
 
+        if($this->discountTotalPercentage > 0)
+            throw new \InvalidArgumentException('You can\'t apply discount over subtotal, when you already have discounts over total.');
+
         // set discount subtotal percentage
         $this->discountSubtotalPercentage = (float) $discountSubtotalPercentage;
 
@@ -381,6 +422,9 @@ class Item implements Arrayable
         if($discountTotalPercentage !== 0 && (empty($discountTotalPercentage) || ! is_numeric($discountTotalPercentage)))
             throw new \InvalidArgumentException('Please supply a valid discount percentage.');
 
+        if($this->discountSubtotalPercentage > 0)
+            throw new \InvalidArgumentException('You can\'t apply discount over total, when you already have discounts over subtotal.');
+
         // set discount total percentage
         $this->discountTotalPercentage = (float) $discountTotalPercentage;
 
@@ -388,6 +432,7 @@ class Item implements Arrayable
 
         return $this;
     }
+
 
     /**
      * Calculate all amounts, this function is called, when change any property from cartItem
@@ -402,151 +447,118 @@ class Item implements Arrayable
             // calculate subtotal
             $this->subtotal = $this->quantity * $this->price;
 
-            // calculate discount amount if has discount subtotal percentage
-            if($this->discountSubtotalPercentage > 0)
-                $this->discountSubtotalAmount = ($this->subtotal * $this->discountSubtotalPercentage) / 100;
-
-            $this->calculateAmountsOverPriceWithoutTax();
-
-            // calculate discount and tax over total amount, if has discount percentage
-            if($this->discountTotalPercentage > 0)
+            // calculate discount subtotal amount
+            if($this->discountSubtotalPercentage > 0 )
             {
-                $this->discountTotalAmount = ($this->total * $this->discountTotalPercentage) / 100;
+                $this->discountSubtotalAmount = ($this->subtotal * $this->discountSubtotalPercentage) / 100;
             }
-        }
-        elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
-        {
-            //calculate total
-            $this->total = $this->quantity * $this->price;
 
-            // calculate discount and tax over total amount, if has discount percentage
+            // calculate all amounts for price without tax
+            $this->total = $this->calculateTotalAndTaxOverSubtotal($this->subtotal - $this->discountSubtotalAmount);
+
+            // calculate discount total amount
             if($this->discountTotalPercentage > 0)
             {
                 $this->discountTotalAmount  = ($this->total * $this->discountTotalPercentage) / 100;
-                $this->total                -= $this->discountTotalAmount;
+
+                $this->subtotal = $this->calculateSubtotalAndTaxOverTotal($this->total - $this->discountTotalAmount);
             }
 
-            $this->calculateAmountsOverPriceWitTax();
+        }
 
-            // calculate discount and tax over subtotal amount, if has discount percentage
-            if($this->discountSubtotalPercentage > 0)
+        elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
+        {
+            // calculate total
+            $this->total = $this->quantity * $this->price;
+
+            if($this->discountTotalPercentage > 0)
+            {
+                $this->discountTotalAmount  = ($this->total * $this->discountTotalPercentage) / 100;
+
+                // calculate again total amount less discount with primary data, (quantity and price)
+                $this->total = ($this->quantity * $this->price) - $this->discountTotalAmount;
+            }
+
+            // calculate all amounts for price with tax
+            $this->subtotal = $this->calculateSubtotalAndTaxOverTotal($this->total);
+
+            // to get subtotal without discount, subtotal is a amount without any discount
+            $this->subtotal = ($this->subtotal * 100) / $this->total;
+
+
+            // calculate discount subtotal amount
+            if($this->discountSubtotalPercentage > 0 )
             {
                 $this->discountSubtotalAmount = ($this->subtotal * $this->discountSubtotalPercentage) / 100;
-                $this->calculateAmountsOverPriceWithoutTax();
+
+                $this->total = $this->calculateTotalAndTaxOverSubtotal($this->subtotal - $this->discountSubtotalAmount);
             }
         }
     }
 
-
-
     /**
      * Calculate discount and tax over subtotal amount
-     *
-     * @return void
+     * @param   float   $subtotal
+     * @return  float
      */
-    private function calculateAmountsOverPriceWithoutTax()
+    private function calculateTotalAndTaxOverSubtotal($subtotal)
     {
-        // reset tax amounts to calculate amounts again
+        // when calculate amounts, also you calculate tax,
+        // to do this operation and don't sum old values, you need reset amounts values from
+        // tax rules
         $this->resetTaxAmounts();
 
-        if($this->taxRules === null || $this->taxRules->count() == 0)
+        // calculate amounts of each taxRule
+        $taxRules       = $this->taxRules->sortBy('priority');
+        $lastPriority   = null;
+        $subtotalAux    = $subtotal;
+
+        foreach ($taxRules as &$taxRule)
         {
-            $this->taxAmount = 0;
-        }
-        else
-        {
-            // calculate amounts of each taxRule
-            $taxRules           = $this->taxRules->sortBy('priority');
-            $lastPriority       = 0;
-            $baseToCalculate    = $this->subtotal - $this->discountSubtotalAmount;
-            foreach ($taxRules as &$taxRule)
+            if($lastPriority == null || $lastPriority != $taxRule->priority)
             {
-                if($lastPriority == $taxRule->priority)
-                {
-                    $taxRule->taxAmount = $baseToCalculate * ($taxRule->taxRate / 100);
-                }
-                else
-                {
-                    $lastPriority = $taxRule->priority;
-
-                    // if is a different priority, calculate tax over subtotal plus previous tax amounts
-                    $baseToCalculate    += $taxRules->sum('taxAmount');
-                    $taxRule->taxAmount = $baseToCalculate * ($taxRule->taxRate / 100);
-                }
+                // if is a different priority, calculate tax over subtotal plus previous tax amounts
+                $lastPriority = $taxRule->priority;
+                $subtotalAux  += $taxRules->sum('taxAmount'); // attention, reset tax amounts before sum
             }
-
-            // set total tax from this car item
-            $this->taxAmount = $this->taxRules->sum('taxAmount');
+            $taxRule->taxAmount = $subtotalAux * ($taxRule->taxRate / 100);
         }
 
-        // first calculate total with discountSubtotal
-        $this->total = ($this->subtotal - $this->discountSubtotalAmount) + $this->taxAmount;
-
-        // last subtracting discountTotal from total
-        $this->total -= $this->discountTotalAmount;
+        // return total
+        return $subtotal + $this->taxRules->sum('taxAmount');
     }
 
     /**
      * Calculate discount and tax over subtotal amount
      *
-     * @return void
+     * @param   float   $total
+     * @return  float
      */
-    private function calculateAmountsOverPriceWitTax()
+    private function calculateSubtotalAndTaxOverTotal($total)
     {
-        // reset tax amounts to calculate amounts again
+        // when calculate amounts, also you calculate tax,
+        // to do this operation and don't sum old values, you need reset amounts values from
+        // tax rules
         $this->resetTaxAmounts();
 
-        // calculate tax
-        $totalAux       = $this->total;
+        // calculate amounts of each taxRule
         $taxRules       = $this->taxRules->sortByDesc('priority');  // sort taxRules desc direction to get subtotal
         $lastPriority   = null;
-        $taxAmountAux   = 0;
+        $totalAux       = $total;
+
         foreach ($taxRules as &$taxRule)
         {
             if($lastPriority === null || $lastPriority != $taxRule->priority)
             {
+                // if is a different priority, calculate tax over subtotal plus previous tax amounts
                 $lastPriority = $taxRule->priority;
-                $totalAux     -= $taxAmountAux;
+                $totalAux     -= $taxRules->sum('taxAmount'); // attention, reset tax amounts before sum
             }
-
-            // get total taxRate from taxRules with the same priority
-            $taxRateAux         = $taxRules->where('priority', $taxRule->priority)->sum('taxRate');
-
-            $taxAmountAux       = ($taxRateAux * $totalAux) / ($taxRateAux + 100);
-            $taxRule->taxAmount = ($taxAmountAux * $taxRule->taxRate) / $taxRateAux;
+            $taxRule->taxAmount = ($totalAux * $taxRule->taxRate) / ($taxRule->taxRate + 100);
         }
 
-        $this->taxAmount    = $taxRules->sum('taxAmount');
-        $this->subtotal     = $this->total - $this->taxAmount;
-    }
-
-
-
-
-
-
-
-
-    /**
-     * Add TaxRule to cartItemTaxRules object
-     *
-     * @param   array|\Syscover\ShoppingCart\TaxRule        $taxRule
-     * @return  \Syscover\ShoppingCart\CartItemTaxRules
-     */
-    private function addTaxRule($taxRule)
-    {
-        if(is_array($taxRule))
-        {
-            return array_map(function ($item) {
-                return $this->addTaxRule($item);
-            }, $taxRule);
-        }
-
-        // sum ratesy if exist a tax rule with de same id
-        if($this->taxRules->has($taxRule->id))
-            $taxRule->taxRate = $taxRule->taxRate + $this->taxRules->get($taxRule->id)->taxRate;
-
-        $this->taxRules->put($taxRule->id, $taxRule);
+        // return subtotal
+        return $this->total - $this->taxRules->sum('taxAmount');
     }
 
     /**

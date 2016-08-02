@@ -2,6 +2,14 @@
 
 use Closure;
 
+/**
+ * Class Cart
+ *
+ * This object obtain yours data about amounts on fly, each petition calculate your result
+ *
+ * @package Syscover\ShoppingCart
+ */
+
 class Cart 
 {
     const PRICE_WITHOUT_TAX = 1;
@@ -141,7 +149,7 @@ class Cart
 
             // recalculate all rules
             $this->applyCartPricesRulesToCartItem($cartItem->rowId);
-            $this->updateCartDiscounts();
+
         }
 
         event('cart.added', $cartItem);
@@ -174,7 +182,7 @@ class Cart
      */
     public function remove($rowId)
     {
-        $cartItem   = $this->cartItems->get($rowId);
+        $cartItem = $this->cartItems->get($rowId);
 
         // fire the cart.remove event
         event('cart.remove', $cartItem);
@@ -184,11 +192,9 @@ class Cart
         // fire the cart.removed event
         event('cart.removed', $cartItem);
 
-        // destroy all properties of cart
+        // destroy all properties of cart, if is empty
         if($this->cartItems->count() === 0)
-        {
             $this->destroy();
-        }
     }
 
     /**
@@ -205,12 +211,14 @@ class Cart
                 return $total + $item->total;
             }, 0);
         }
+
         if($attribute === 'taxAmount') {
             $cartItems = $this->cartItems;
             return $cartItems->reduce(function ($taxAmount, Item $item) {
                 return $taxAmount + $item->taxAmount;
             }, 0);
         }
+
         if($attribute === 'subtotal')
         {
             $cartItems = $this->cartItems;
@@ -218,12 +226,26 @@ class Cart
                 return $subTotal + $item->subtotal;
             }, 0);
         }
-        if($attribute === 'discountAmount')
+
+        if($attribute === 'discountSubtotalAmount')
         {
             $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($discountAmount, Item $item) {
-                return $discountAmount + $item->discountAmount;
+            return $cartItems->reduce(function ($discountSubtotalAmount, Item $item) {
+                return $discountSubtotalAmount + $item->discountSubtotalAmount;
             }, 0);
+        }
+
+        if($attribute === 'discountTotalAmount')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($discountTotalAmount, Item $item) {
+                return $discountTotalAmount + $item->discountTotalAmount;
+            }, 0);
+        }
+
+        if($attribute === 'discountAmount')
+        {
+            return $this->discountSubtotalAmount + $this->discountTotalAmount;
         }
 
         return null;
@@ -256,19 +278,6 @@ class Cart
     }
 
     /**
-     * Get the taxAmount formated of the items in the cart.
-     *
-     * @param   int     $decimals
-     * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
-     * @return  float
-     */
-    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
-    {
-        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeperator);
-    }
-
-    /**
      * Get the subtotal formated of the items in the cart.
      *
      * @param   int     $decimals
@@ -282,16 +291,16 @@ class Cart
     }
 
     /**
-     * Get the discount formated of the cart price rules.
+     * Get the discount amount formated from all items in the cart.
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
      * @param   string  $thousandSeperator
      * @return  float
      */
-    public function getDiscount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
-        return number_format($this->discount, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
@@ -316,8 +325,6 @@ class Cart
     {
         $this->cartItems->get($rowId)->setQuantity($quantity);
 
-        $this->updateCartDiscounts();
-
         // if quantity is less than zere, remove item
         if ($this->cartItems->get($rowId)->getQuantity() <= 0)
         {
@@ -326,7 +333,7 @@ class Cart
     }
 
     /**
-     * Get Array with tax rules objects
+     * Get Collection with tax rules objects
      *
      * @return \Syscover\ShoppingCart\CartItemTaxRules
      */
@@ -391,88 +398,17 @@ class Cart
         }
         else
         {
+            if($priceRule->discountType === PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE && $this->cartPriceRules->where('discountType', PriceRule::DISCOUNT_TOTAL_PERCENTAGE)->count() > 0)
+                throw new \InvalidArgumentException('You can\'t apply discount over subtotal, when you already have discounts over total.');
+
+            if($priceRule->discountType === PriceRule::DISCOUNT_TOTAL_PERCENTAGE && $this->cartPriceRules->where('discountType', PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)->count() > 0)
+                throw new \InvalidArgumentException('You can\'t apply discount over total, when you already have discounts over subtotal.');
+
             // add object to cart price rules
             $this->cartPriceRules->put($priceRule->id, $priceRule);
 
             $this->applyCartPriceRuleToCartItems($priceRule);
             $this->updateCartDiscounts();
-        }
-    }
-
-    /**
-     * update and create discount amounts, inside all cartPriceRules
-     * This function set all data about rules, is called with every change
-     *
-     * @return void
-     */
-    private function updateCartDiscounts()
-    {
-        // reset discounts cart paramenters
-        $this->hasCartPriceRuleNotCombinable    = false;
-        $this->hasFreeShipping                  = false;
-
-        foreach($this->cartPriceRules as &$cartPriceRule)
-        {
-            // discount by percentage
-            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)
-            {
-                // check if discount is with shipping amount
-                if($cartPriceRule->applyShippingAmount && $this->hasShipping && ! $this->hasFreeShipping)
-                {
-                    $discountAmount = (($this->subtotal + $this->shippingAmount) * $cartPriceRule->discountPercentage) / 100;
-                }
-                else
-                {
-                    $discountAmount = ($this->subtotal * $cartPriceRule->discountPercentage) / 100;
-                }
-
-                // check if discount is lower that maximum discount allowed
-//                if($cartPriceRule->maximumDiscountAmount != null && $discountAmount > $cartPriceRule->maximumDiscountAmount)
-//                {
-//                    $discountAmount = $cartPriceRule->maximumDiscountAmount;
-//                }
-
-                $cartPriceRule->discountAmount = $discountAmount;
-            }
-
-
-
-
-
-            // discount by fixed amount
-            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_FIXED_AMOUNT)
-            {
-                $cartPriceRule->discountAmount = $cartPriceRule->discountFixed;
-            }
-
-
-
-
-
-            // check if price rule is combinable
-            if(! $cartPriceRule->combinable)
-                $this->hasCartPriceRuleNotCombinable = true;
-
-            // check if price rule has free shipping
-            if($cartPriceRule->freeShipping)
-                $this->hasFreeShipping = true;
-        }
-    }
-
-    /**
-     * Implement all PriceRules in one cartItem
-     *
-     * @return void
-     */
-    private function applyCartPricesRulesToCartItem($rowId)
-    {
-        foreach($this->cartPriceRules as $cartPriceRule)
-        {
-            // discount by percentage
-            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)
-            {
-                $this->cartItems->get($rowId)->setDiscountPercentage($cartPriceRule->discountPercentage);
-            }
         }
     }
 
@@ -503,6 +439,103 @@ class Cart
         }
     }
 
+    /**
+     * Implement all PriceRules in one cartItem
+     *
+     * @return void
+     */
+    private function applyCartPricesRulesToCartItem($rowId)
+    {
+        foreach($this->cartPriceRules as $cartPriceRule)
+        {
+            // discount subtotal percentage
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)
+            {
+                $this->cartItems->get($rowId)->setDiscountSubtotalPercentage($cartPriceRule->discountPercentage);
+            }
+
+            // discount subtotal percentage
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_TOTAL_PERCENTAGE)
+            {
+                $this->cartItems->get($rowId)->setDiscountTotalPercentage($cartPriceRule->discountPercentage);
+            }
+        }
+    }
+
+    /**
+     * Update and create discount amounts, inside all cartPriceRules
+     * This function set all data about rules, is called with every change
+     *
+     * @return void
+     */
+    private function updateCartDiscounts()
+    {
+        // reset discounts cart paramenters
+        $this->hasCartPriceRuleNotCombinable    = false;
+        $this->hasFreeShipping                  = false;
+
+        foreach($this->cartPriceRules as &$cartPriceRule)
+        {
+            // discount percentage over subtotal
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)
+            {
+                // check if discount is with shipping amount
+                if($cartPriceRule->applyShippingAmount && $this->hasShipping && ! $this->hasFreeShipping)
+                    $discountAmount = (($this->subtotal + $this->shippingAmount) * $cartPriceRule->discountPercentage) / 100;
+                else
+                    $discountAmount = ($this->subtotal * $cartPriceRule->discountPercentage) / 100;
+
+                // check if discount is lower that maximum discount allowed
+//                if($cartPriceRule->maximumDiscountAmount != null && $discountAmount > $cartPriceRule->maximumDiscountAmount)
+//                {
+//                    $discountAmount = $cartPriceRule->maximumDiscountAmount;
+//                }
+
+                $cartPriceRule->discountAmount = $discountAmount;
+            }
+
+            // discount percentage over total
+            if($cartPriceRule->discountType == PriceRule::DISCOUNT_TOTAL_PERCENTAGE)
+            {
+                // check if discount is with shipping amount
+                if($cartPriceRule->applyShippingAmount && $this->hasShipping && ! $this->hasFreeShipping)
+                    $discountAmount = (($this->total + $this->discountTotalAmount + $this->shippingAmount) * $cartPriceRule->discountPercentage) / 100;
+                else
+                    $discountAmount = (($this->total + $this->discountTotalAmount) * $cartPriceRule->discountPercentage) / 100;
+
+                // check if discount is lower that maximum discount allowed
+//                if($cartPriceRule->maximumDiscountAmount != null && $discountAmount > $cartPriceRule->maximumDiscountAmount)
+//                {
+//                    $discountAmount = $cartPriceRule->maximumDiscountAmount;
+//                }
+
+                $cartPriceRule->discountAmount = $discountAmount;
+            }
+
+
+
+
+
+            // discount by fixed amount
+//            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_FIXED_AMOUNT)
+//            {
+//                $cartPriceRule->discountAmount = $cartPriceRule->discountFixed;
+//            }
+
+            // check if price rule is combinable
+            if(! $cartPriceRule->combinable)
+                $this->hasCartPriceRuleNotCombinable = true;
+
+            // check if price rule has free shipping
+            if($cartPriceRule->freeShipping)
+                $this->hasFreeShipping = true;
+        }
+    }
+
+
+
+
+
 
 
 
@@ -518,37 +551,7 @@ class Cart
 
     ////////////////////////////////////////////////////
 
-//	/**
-//	 * Get the price total, include shipping amount
-//	 *
-//	 * @return float
-//	 */
-//	public function total()
-//	{
-//		$total 			= 0;
-//		$cartItems = $this->cartItems;
-//
-//		if(empty($cartItems))
-//		{
-//			return $total;
-//		}
-//
-//		foreach($cartItems as $row)
-//		{
-//			$total += $row->subtotal;
-//		}
-//
-//		// check that, don't have free shipping
-//		if( ! $this->hasFreeShipping())
-//		{
-//			// sum shipping amount
-//			$total += $this->getShippingAmount();
-//		}
-//
-//		$total -= $this->discount();
-//
-//		return $total;
-//	}
+
 //
 //
 //	/**
