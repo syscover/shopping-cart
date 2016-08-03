@@ -98,7 +98,7 @@ class PriceRule
      * @param bool      $applyShippingAmount
      * @param bool      $freeShipping
      */
-    public function __construct($name, $description, $discountType, $combinable = true, $discountPercentage = null, $discountFixed = null, $maximumDiscountAmount = null, $applyShippingAmount = false, $freeShipping  = false)
+    public function __construct($name, $description, $discountType, $combinable = true, $discountPercentage = null, $discountFixed = null, $maximumDiscountAmount = null, $applyShippingAmount = false, $freeShipping = false)
     {
         $this->name                     = $name;
         $this->description              = $description;

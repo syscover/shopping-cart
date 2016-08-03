@@ -76,7 +76,7 @@ class Cart
 		$this->cartItems 			            = new CartItems();
 		$this->cartPriceRules 		            = new CartPriceRules();
         $this->hasCartPriceRuleNotCombinable 	= false;
-        
+
 		//$this->freeShipping					= false;
 		//$this->shippingAmount				    = 0;
 		//$this->shipping						= false;
@@ -420,11 +420,6 @@ class Cart
             if($priceRule->discountType === PriceRule::DISCOUNT_TOTAL_PERCENTAGE && $this->cartPriceRules->where('discountType', PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)->count() > 0)
                 throw new \InvalidArgumentException('You can\'t apply discount over total, when you already have discounts over subtotal.');
 
-            if(! $priceRule->combinable)
-            {
-                $this->hasCartPriceRuleNotCombinable = true;
-            }
-
             // add object to cart price rules
             $this->cartPriceRules->put($priceRule->id, $priceRule);
 
@@ -588,6 +583,10 @@ class Cart
      */
     private function updateCartPercentageDiscounts()
     {
+        // reset properties shopping cart
+        $this->hasCartPriceRuleNotCombinable = false;
+        $this->hasFreeShipping = false;
+
         // calculate for each cart price rule, amount to discount
         foreach($this->cartPriceRules as &$cartPriceRule)
         {
@@ -629,14 +628,13 @@ class Cart
                 $cartPriceRule->discountAmount = $discountAmount;
             }
 
-            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_FIXED_AMOUNT)
-            {
+            // set not combinable rules
+            if(! $cartPriceRule->combinable)
+                $this->hasCartPriceRuleNotCombinable = true;
 
-            }
-            if($cartPriceRule->discountType == PriceRule::DISCOUNT_TOTAL_FIXED_AMOUNT)
-            {
-
-            }
+            // set free shipping rule
+            if($cartPriceRule->freeShipping)
+                $this->hasFreeShipping = true;
 
 
 
