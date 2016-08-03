@@ -222,11 +222,11 @@ To set price rules you can use addCartPriceRule methop
 ```
     CartProvider::instance()->addCartPriceRule(
         new PriceRule(
-            'My first price rule',
-            'For being a good customer',
-            PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE,
-            true,
-            10.00
+            'My first price rule',                      // name
+            'For being a good customer',                // description
+            PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE,    // discount type
+            false,                                      // free shipping
+            10.00                                       // discount fixed amount
         )
     );
 ```
