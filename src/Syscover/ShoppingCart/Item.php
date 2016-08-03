@@ -541,19 +541,8 @@ class Item implements Arrayable
 
         elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
         {
-            // calculate total
-            $this->total = $this->quantity * $this->price;
-
-            if($this->discountTotalPercentage > 0 || $this->discountTotalFixedAmount > 0)
-            {
-                $this->discountTotalPercentageAmount  = (($this->total - $this->discountTotalFixedAmount) * $this->discountTotalPercentage) / 100;
-
-                // sum all discounts over total
-                $discountTotalAmount = $this->discountTotalPercentageAmount + $this->discountTotalFixedAmount;
-
-                // calculate again total amount less discount with primary data, (quantity and price)
-                $this->total = ($this->quantity * $this->price) - $discountTotalAmount;
-            }
+            // calculate total including possible discount fixed amount
+            $this->total = ($this->quantity * $this->price) - $this->discountTotalFixedAmount;
 
             // calculate all amounts for price with tax
             $this->subtotalWithDiscounts = $this->calculateSubtotalAndTaxOverTotal($this->total);
@@ -562,17 +551,37 @@ class Item implements Arrayable
             $this->subtotal = ($this->subtotalWithDiscounts * ($this->quantity * $this->price)) / $this->total;
 
             // calculate discount subtotal amount
-            if($this->discountSubtotalPercentage > 0 || $this->discountSubtotalFixedAmount > 0)
+            if($this->discountSubtotalFixedAmount > 0)
             {
-                // calculate amount after fixed discount
-                $this->discountSubtotalPercentageAmount = (($this->subtotal - $this->discountSubtotalFixedAmount) * $this->discountSubtotalPercentage) / 100;
+                // calculate subtotal less discount fixed amount
+                $this->subtotalWithDiscounts -= $this->discountSubtotalFixedAmount;
 
-                // sum all discounts over subtotal
-                $discountSubtotalAmount = $this->discountSubtotalPercentageAmount + $this->discountSubtotalFixedAmount;
+                $this->total = $this->calculateTotalAndTaxOverSubtotal($this->subtotalWithDiscounts);
+            }
 
-                $this->subtotalWithDiscounts = $this->subtotal - $discountSubtotalAmount;
+            // calculate if there are subtotal percentage discount
+            if($this->discountTotalPercentage > 0)
+            {
+                // calculate discount to apply
+                $this->discountTotalPercentageAmount = ($this->total * $this->discountTotalPercentage) / 100;
 
-                $this->total = $this->calculateTotalAndTaxOverSubtotal($this->subtotal - $discountSubtotalAmount);
+                // calculate again total amount less discount
+                $this->total -= $this->discountTotalPercentageAmount;
+
+                // calculate all amounts for price with tax
+                $this->subtotalWithDiscounts = $this->calculateSubtotalAndTaxOverTotal($this->total);
+            }
+
+            // calculate if there are total percentage discount
+            if($this->discountSubtotalPercentage > 0)
+            {
+                // calculate discount to apply
+                $this->discountSubtotalPercentageAmount = ($this->subtotalWithDiscounts * $this->discountSubtotalPercentage) / 100;
+
+                // calculate again subtotal amount less discount
+                $this->subtotalWithDiscounts -= $this->discountSubtotalPercentageAmount;
+
+                $this->total = $this->calculateTotalAndTaxOverSubtotal($this->subtotalWithDiscounts);
             }
         }
     }

@@ -226,11 +226,27 @@ class Cart
             }, 0);
         }
 
+        if($attribute === 'discountSubtotalPercentageAmount')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($discountSubtotalPercentageAmount, Item $item) {
+                return $discountSubtotalPercentageAmount + $item->discountTotalPercentageAmount;
+            }, 0);
+        }
+
+        if($attribute === 'discountTotalPercentageAmount')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($discountTotalPercentageAmount, Item $item) {
+                return $discountTotalPercentageAmount + $item->discountTotalPercentageAmount;
+            }, 0);
+        }
+
         if($attribute === 'discountSubtotalAmount')
         {
             $cartItems = $this->cartItems;
             return $cartItems->reduce(function ($discountSubtotalAmount, Item $item) {
-                return $discountSubtotalAmount + $item->discountSubtotalPercentageAmount;
+                return $discountSubtotalAmount + $item->discountSubtotalPercentageAmount + $item->discountSubtotalFixedAmount;
             }, 0);
         }
 
@@ -238,7 +254,7 @@ class Cart
         {
             $cartItems = $this->cartItems;
             return $cartItems->reduce(function ($discountTotalAmount, Item $item) {
-                return $discountTotalAmount + $item->discountTotalPercentageAmount;
+                return $discountTotalAmount + $item->discountTotalPercentageAmount + $item->discountTotalFixedAmount;
             }, 0);
         }
 
@@ -570,6 +586,10 @@ class Cart
         $this->hasCartPriceRuleNotCombinable    = false;
         $this->hasFreeShipping                  = false;
 
+
+
+
+        // calculate for each cart price rule, amount to discount
         foreach($this->cartPriceRules as &$cartPriceRule)
         {
             // discount percentage over subtotal
@@ -581,23 +601,26 @@ class Cart
                 else
                     $discountAmount = ($this->subtotal * $cartPriceRule->discountPercentage) / 100;
 
+                $cartPriceRule->discountAmount = $discountAmount;
+
                 // check if discount is lower that maximum discount allowed
 //                if($cartPriceRule->maximumDiscountAmount != null && $discountAmount > $cartPriceRule->maximumDiscountAmount)
 //                {
 //                    $discountAmount = $cartPriceRule->maximumDiscountAmount;
 //                }
 
-                $cartPriceRule->discountAmount = $discountAmount;
+
             }
 
             // discount percentage over total
             if($cartPriceRule->discountType == PriceRule::DISCOUNT_TOTAL_PERCENTAGE)
             {
+                dd($this->cartItems);
                 // check if discount is with shipping amount
                 if($cartPriceRule->applyShippingAmount && $this->hasShipping && ! $this->hasFreeShipping)
-                    $discountAmount = (($this->total + $this->discountTotalAmount + $this->shippingAmount) * $cartPriceRule->discountPercentage) / 100;
+                    $discountAmount = (($this->total + $this->discountTotalPercentageAmount + $this->shippingAmount) * $cartPriceRule->discountPercentage) / 100;
                 else
-                    $discountAmount = (($this->total + $this->discountTotalAmount) * $cartPriceRule->discountPercentage) / 100;
+                    $discountAmount = (($this->total + $this->discountTotalPercentageAmount) * $cartPriceRule->discountPercentage) / 100;
 
                 // check if discount is lower that maximum discount allowed
 //                if($cartPriceRule->maximumDiscountAmount != null && $discountAmount > $cartPriceRule->maximumDiscountAmount)
