@@ -517,8 +517,8 @@ class Item implements Arrayable
         // subtotal calculate
         if(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX || $this->taxRules === null || $this->taxRules->count() == 0)
         {
-            // calculate subtotal
-            $this->subtotal = $this->quantity * $this->price;
+            // calculate subtotal including possible discount fixed amount
+            $this->subtotal = ($this->quantity * $this->price) - $this->discountSubtotalFixedAmount;
 
             // calculate discount subtotal amount
             if($this->discountSubtotalPercentage > 0 )
@@ -536,7 +536,6 @@ class Item implements Arrayable
 
                 $this->subtotal = $this->calculateSubtotalAndTaxOverTotal($this->total - $this->discountTotalPercentageAmount);
             }
-
         }
 
         elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)

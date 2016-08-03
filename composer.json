@@ -1,9 +1,7 @@
 {
     "name": "syscover/shoppingcart",
-    "version": "5.2",
     "description": "ShoppingCart package",
     "keywords": ["syscover","pulsar","laravel","Shoppingcart","Shopping Cart"],
-    "license": "MIT",
     "authors": [
         {
             "name": "SYSCOVER SL",
