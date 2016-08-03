@@ -148,7 +148,7 @@ class Cart
             $this->cartItems->put($cartItem->rowId, $cartItem);
 
             // apply cart rules to new cartItem
-            $this->applyCartPricesRulesToCartItem($cartItem->rowId);
+            $this->applyCartPricesRulesWithPercentageDiscountsToCartItem($cartItem->rowId);
         }
 
         event('cart.added', $cartItem);
@@ -407,7 +407,7 @@ class Cart
             $this->cartPriceRules->put($priceRule->id, $priceRule);
 
             $this->applyCartPriceRuleToCartItems($priceRule);
-            $this->updateCartDiscounts();
+            $this->updateCartPercentageDiscounts();
         }
     }
 
@@ -536,7 +536,7 @@ class Cart
      *
      * @return void
      */
-    private function applyCartPricesRulesToCartItem($rowId)
+    private function applyCartPricesRulesWithPercentageDiscountsToCartItem($rowId)
     {
         foreach($this->cartPriceRules as $cartPriceRule)
         {
@@ -560,7 +560,7 @@ class Cart
      *
      * @return void
      */
-    private function updateCartDiscounts()
+    private function updateCartPercentageDiscounts()
     {
         // reset discounts cart paramenters
         $this->hasCartPriceRuleNotCombinable    = false;
