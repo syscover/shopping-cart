@@ -244,25 +244,3 @@ Scenarios to consider when applying to the pricing rules
 
 
 
-If you want to check, if this cart has shipping, you can use this method
-```
-CartProvider::instance()->hasShipping();
-```
-
-
-If you want set shipping with true or false, you can use this method setShipping and pass boolean parameter
-```
-CartProvider::instance()->setShipping(true);
-```
-
-
-You have setShippingAmount to set amount shipping of all cart
-```
-CartProvider::instance()->setShippingAmount();
-```
-
-
-You have getShippingAmount to get amount shipping of all cart
-```
-CartProvider::instance()->getShippingAmount();
-```
