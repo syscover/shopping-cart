@@ -232,7 +232,8 @@ To set price rules you can use addCartPriceRule methop
 ```
 
 Scenarios to consider when applying to the pricing rules
-* We have created discounts over subtotal and total price, but you can not apply both discounts to the same time.
+* We have created discounts over subtotal and total price, but you can not apply both discounts to the same cart.
+* If apply percentage discount and fixed, first will apply percentage discount and last the fixed discount
 
 
 
