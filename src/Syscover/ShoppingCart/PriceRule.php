@@ -53,32 +53,11 @@ class PriceRule
     public $combinable;
 
     /**
-     * Percentage of discount if discount type is DISCOUNT_SUBTOTAL_PERCENTAGE
-     *
-     * @var float
-     */
-    public $discountPercentage;
-
-    /**
-     * Discount amount if discount type is DISCOUNT_SUBTOTAL_FIXED_AMOUNT
-     *
-     * @var float
-     */
-    public $discountFixed;
-
-    /**
      * Maximum discount amount if discount type is DISCOUNT_SUBTOTAL_FIXED_AMOUNT
      *
      * @var float
      */
-    public $maximumDiscountAmount;
-
-    /**
-     * Set if apply discount to subtotal and shipping amount or only subtotal
-     *
-     * @var boolean
-     */
-    public $applyShippingAmount;
+    public $maximumDiscountAmount; // todo revisar el nombre y sustituir
 
     /**
      * Check if this price rule has free shipping

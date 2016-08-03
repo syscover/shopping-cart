@@ -5,7 +5,7 @@ use Illuminate\Contracts\Support\Arrayable;
 class Discount implements Arrayable
 {
     /**
-     * Shipping amount
+     * Discount amount if discount is fixed
      *
      * @var float
      */
