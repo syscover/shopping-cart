@@ -454,35 +454,37 @@ class Cart
             });
 
             // get discount amount to discount
-            $amountToDiscount = $priceRule->discountFixed;
+            $discountAmount = $priceRule->discountFixed;
 
             // we go over cartItems discount fixed amount
             foreach ($cartItems as $cartItemsGroup)
             {
                 foreach ($cartItemsGroup as $cartItem)
                 {
-                    if($cartItem->subtotalWithDiscounts - $amountToDiscount >= 0)
+                    if($cartItem->subtotalWithDiscounts - $discountAmount >= 0)
                     {
                         // amount to discount is less or equal than subtotal
                         $cartItem->setDiscountSubtotalFixed(
-                            $cartItem->discountSubtotalFixedAmount + $amountToDiscount
+                            $cartItem->discountSubtotalFixedAmount + $discountAmount
                         );
-                        $amountToDiscount = 0;
+                        $discountAmount = 0;
                         break;
                     }
                     else
                     {
                         // amount to discount is highest than subtotal
-                        $amountToDiscount -= $cartItem->subtotalWithDiscounts;
+                        $discountAmount -= $cartItem->subtotalWithDiscounts;
 
                         $cartItem->setDiscountSubtotalFixed(
-                            $cartItem->discountSubtotalFixedAmount + $amountToDiscount
+                            $cartItem->discountSubtotalFixedAmount + $discountAmount
                         );
                     }
                 }
-                if($amountToDiscount == 0)
+                if($discountAmount == 0)
                     break;
             }
+            // this variable is instance in session
+            $priceRule->discountAmount = $priceRule->discountFixed - $discountAmount;
         }
 
         // set fixed discounts over total
@@ -498,35 +500,37 @@ class Cart
             });
 
             // get discount amount to discount
-            $amountToDiscount = $priceRule->discountFixed;
+            $discountAmount = $priceRule->discountFixed;
 
             // we go over cartItems discount fixed amount
             foreach ($cartItems as $cartItemsGroup)
             {
                 foreach ($cartItemsGroup as $cartItem)
                 {
-                    if($cartItem->total - $amountToDiscount >= 0)
+                    if($cartItem->total - $discountAmount >= 0)
                     {
                         // amount to discount is less or equal than total
                         $cartItem->setDiscountTotalFixed(
-                            $cartItem->discountTotalFixedAmount + $amountToDiscount
+                            $cartItem->discountTotalFixedAmount + $discountAmount
                         );
-                        $amountToDiscount = 0;
+                        $discountAmount = 0;
                         break;
                     }
                     else
                     {
                         // amount to discount is highest than subtotal
-                        $amountToDiscount -= $cartItem->total;
+                        $discountAmount -= $cartItem->total;
 
                         $cartItem->setDiscountTotalFixed(
-                            $cartItem->discountTotalFixedAmount + $amountToDiscount
+                            $cartItem->discountTotalFixedAmount + $discountAmount
                         );
                     }
                 }
-                if($amountToDiscount == 0)
+                if($discountAmount == 0)
                     break;
             }
+            // this variable is instance in session
+            $priceRule->discountAmount = $priceRule->discountFixed - $discountAmount;
         }
     }
 

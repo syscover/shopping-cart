@@ -507,8 +507,6 @@ class Item implements Arrayable
         return $this;
     }
 
-
-
     /**
      * Calculate all amounts, this function is called, when change any property from cartItem
      *
