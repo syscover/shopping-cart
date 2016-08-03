@@ -76,9 +76,7 @@ class Cart
 		$this->cartItems 			            = new CartItems();
 		$this->cartPriceRules 		            = new CartPriceRules();
         $this->hasCartPriceRuleNotCombinable 	= false;
-
-
-
+        
 		//$this->freeShipping					= false;
 		//$this->shippingAmount				    = 0;
 		//$this->shipping						= false;
@@ -413,11 +411,19 @@ class Cart
         }
         else
         {
+            if($this->hasCartPriceRuleNotCombinable)
+                throw new \InvalidArgumentException('You can\'t apply price rule, you have a not combinable price rule in shopping cart.');
+
             if($priceRule->discountType === PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE && $this->cartPriceRules->where('discountType', PriceRule::DISCOUNT_TOTAL_PERCENTAGE)->count() > 0)
                 throw new \InvalidArgumentException('You can\'t apply discount over subtotal, when you already have discounts over total.');
 
             if($priceRule->discountType === PriceRule::DISCOUNT_TOTAL_PERCENTAGE && $this->cartPriceRules->where('discountType', PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE)->count() > 0)
                 throw new \InvalidArgumentException('You can\'t apply discount over total, when you already have discounts over subtotal.');
+
+            if(! $priceRule->combinable)
+            {
+                $this->hasCartPriceRuleNotCombinable = true;
+            }
 
             // add object to cart price rules
             $this->cartPriceRules->put($priceRule->id, $priceRule);
@@ -582,13 +588,6 @@ class Cart
      */
     private function updateCartPercentageDiscounts()
     {
-        // reset discounts cart paramenters
-        $this->hasCartPriceRuleNotCombinable    = false;
-        $this->hasFreeShipping                  = false;
-
-
-
-
         // calculate for each cart price rule, amount to discount
         foreach($this->cartPriceRules as &$cartPriceRule)
         {
@@ -615,7 +614,6 @@ class Cart
             // discount percentage over total
             if($cartPriceRule->discountType == PriceRule::DISCOUNT_TOTAL_PERCENTAGE)
             {
-                dd($this->cartItems);
                 // check if discount is with shipping amount
                 if($cartPriceRule->applyShippingAmount && $this->hasShipping && ! $this->hasFreeShipping)
                     $discountAmount = (($this->total + $this->discountTotalPercentageAmount + $this->shippingAmount) * $cartPriceRule->discountPercentage) / 100;
@@ -649,9 +647,6 @@ class Cart
 //                $cartPriceRule->discountAmount = $cartPriceRule->discountFixed;
 //            }
 
-            // check if price rule is combinable
-            if(! $cartPriceRule->combinable)
-                $this->hasCartPriceRuleNotCombinable = true;
 
             // check if price rule has free shipping
             if($cartPriceRule->freeShipping)
