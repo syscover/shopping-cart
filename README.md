@@ -4,7 +4,7 @@
 
 **1 - After install Laravel framework, insert on file composer.json, inside require object this value**
 ```
-"syscover/shoppingcart": "dev-master"
+"syscover/shoppingcart": "~1.0"
 ```
 
 and execute on console:
@@ -234,13 +234,3 @@ To set price rules you can use addCartPriceRule methop
 Scenarios to consider when applying to the pricing rules
 * We have created discounts over subtotal and total price, but you can not apply both discounts to the same cart.
 * If apply percentage discount and fixed, first will apply percentage discount and last the fixed discount
-
-
-
-
-
-
-
-
-
-
