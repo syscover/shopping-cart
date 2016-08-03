@@ -39,15 +39,7 @@ class Shipping implements Arrayable
      */
     public $freeShipping;
 
-
-
-
-
-
-
-
     /**
-     * ????????????
      * Get the instance as an array.
      *
      * @return array

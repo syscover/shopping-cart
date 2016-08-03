@@ -1,5 +1,7 @@
 <?php namespace Syscover\ShoppingCart;
 
+use Syscover\ShoppingCart\Discount;
+
 class PriceRule
 {
     const WITHOUT_DISCOUNT                  = 1;
@@ -35,6 +37,13 @@ class PriceRule
      * @var int
      */
     public $discountType;
+
+    /**
+     * Discount object with values of discount
+     *
+     * @var int
+     */
+    public $discount;
 
     /**
      * Check if this price rule is combinable with other price rules
@@ -98,7 +107,7 @@ class PriceRule
      * @param bool      $applyShippingAmount
      * @param bool      $freeShipping
      */
-    public function __construct($name, $description, $discountType, $combinable = true, $discountPercentage = null, $discountFixed = null, $maximumDiscountAmount = null, $applyShippingAmount = false, $freeShipping = false)
+    public function __construct($name, $description, $discountType, $freeShipping = false, $discountFixed = null, $discountPercentage = null, $maximumDiscountAmount = null, $applyShippingAmount = false, $combinable = true)
     {
         $this->name                     = $name;
         $this->description              = $description;
@@ -110,6 +119,9 @@ class PriceRule
         $this->applyShippingAmount      = $applyShippingAmount;
         $this->freeShipping             = $freeShipping;
         $this->id                       = $this->generateId();
+
+        $this->discount = new Discount($discountFixed, $discountPercentage, $maximumDiscountAmount, $applyShippingAmount);
+
     }
 
     /**
@@ -119,7 +131,7 @@ class PriceRule
      */
     protected function generateId()
     {
-        return md5($this->name . $this->description . $this->discountType. $this->combinable);
+        return md5($this->name . $this->description . $this->discountType . $this->combinable);
     }
 
     /**

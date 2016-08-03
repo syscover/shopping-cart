@@ -599,15 +599,12 @@ class Cart
                 else
                     $discountAmount = ($this->subtotal * $cartPriceRule->discountPercentage) / 100;
 
-                $cartPriceRule->discountAmount = $discountAmount;
-
                 // check if discount is lower that maximum discount allowed
 //                if($cartPriceRule->maximumDiscountAmount != null && $discountAmount > $cartPriceRule->maximumDiscountAmount)
-//                {
 //                    $discountAmount = $cartPriceRule->maximumDiscountAmount;
-//                }
 
-
+                // set discount amount
+                $cartPriceRule->discountAmount = $discountAmount;
             }
 
             // discount percentage over total
@@ -621,30 +618,15 @@ class Cart
 
                 // check if discount is lower that maximum discount allowed
 //                if($cartPriceRule->maximumDiscountAmount != null && $discountAmount > $cartPriceRule->maximumDiscountAmount)
-//                {
 //                    $discountAmount = $cartPriceRule->maximumDiscountAmount;
-//                }
 
+                // set discount amount
                 $cartPriceRule->discountAmount = $discountAmount;
             }
 
-            // set not combinable rules
+            // check if price rule has not combinable
             if(! $cartPriceRule->combinable)
                 $this->hasCartPriceRuleNotCombinable = true;
-
-            // set free shipping rule
-            if($cartPriceRule->freeShipping)
-                $this->hasFreeShipping = true;
-
-
-
-
-            // discount by fixed amount
-//            if($cartPriceRule->discountType == PriceRule::DISCOUNT_SUBTOTAL_FIXED_AMOUNT)
-//            {
-//                $cartPriceRule->discountAmount = $cartPriceRule->discountFixed;
-//            }
-
 
             // check if price rule has free shipping
             if($cartPriceRule->freeShipping)
