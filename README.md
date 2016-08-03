@@ -152,7 +152,7 @@ CartProvider::instance()->getSubtotal();
 
 To get total price
 ```
-CartProvider::instance()->total();
+CartProvider::instance()->total;
 
 // or total price formatted
 CartProvider::instance()->getTotal();
