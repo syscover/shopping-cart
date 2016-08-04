@@ -42,15 +42,25 @@ phpunit tests/CartProviderTest
 
 ##The shoppingcart gives you the following methods to use:
 
-Add car item to cart, you need create Item objects to add cart, you can use a Item object or Items array if you want add various elements
+To add items we have create a Item object with this properties:
+* id:string = Id of product
+* name:string = Name of product
+* quantity:float = Quantity of product than you want add
+* price:float = Price product by unit 
+* weight:float [default 1.000] = Weight of product
+* transportable:boolean [default true] = Set if product can to be delivery
+* taxRule:TaxRule[] [default []] = Set tax rules for this product
+* options:array [default []] = Set a associative array to set custom options 
+
+Add car item to cart, you need create Item objects to add cart, you can use a Item object or Items array if you want add various elements.
 ```
 // Basic add Item to Cart
-CartProvider::instance()->add(new Item('293ad', 'Product 1', 1, 9.99, 1.000, true));
+CartProvider::instance()->add(new Item('293ad', 'Product 1', 1, 9.99));
 
 // Multiple add Items to Cart
 CartProvider::instance()->add([
-    new Item('293ad', 'Product 1', 1, 9.99, 1.000, true),
-    new Item('979ze', 'Product 2', 1, 12.90, 1.000, true)
+    new Item('293ad', 'Product 1', 1, 9.99),
+    new Item('979ze', 'Product 2', 1, 12.90)
 ]);
 
 // Multiple add Items with options to Cart
@@ -61,7 +71,7 @@ CartProvider::instance()->add([
 ```
 
 
-We have created TaxRule object to calculate tax from shopping cart, this object has this properties
+We have created TaxRule object to calculate tax from shopping cart, this object has this properties:
 * name:string = Name of tax
 * taxRate:float = Percentage of tax
 * priority:int [default 0] = Order to calculate tax over subtotal. If are different priorities, the highest tax is calculated on the subtotal more taxes lower priority 
@@ -201,13 +211,14 @@ CartProvider::instance('wishlist')->getCartItems();
 We have created PriceRule object to apply discounts over items cart
 * name:string = Name of price rule
 * description:string = Description of rule
-* discountType:int = You have various options, below you have all options 
+* discountType:int = You have various options, below you have all options
+* freeShipping:boolean [default false] = Check this option to set a rule whith free shipping
+* discountFixed:float [default null] = Set a discount amount fixed
+* discountPercentage:float [default null] = Set a rate percentage to discount
+* maximumDiscountAmount:float [default null] = If you choose a discount percentage, you can set a maximum amount to discount
+* applyShippingAmount:boolean [default false] = Check this option if you want apply discount to shipping amount too
 * combinable:boolean [default true] = Set if this price rule can to have other one in the same cart 
-* discountPercentage [default null] = Set a rate percentage to discount
-* discountFixed [default null] = Set a discount amount fixed
-* maximumDiscountAmount [default null] = If you choose a discount percentage, you can set a maximum amount to discount
-* applyShippingAmount [default false] = Check this option if you want apply discount to shipping amount too
-* freeShipping [default false] = Check this option to set a rule whith free shipping
+
 
 With this constants from PriceRule class, you can define discount type
 ```
