@@ -5,6 +5,13 @@ use Illuminate\Contracts\Support\Arrayable;
 class Discount implements Arrayable
 {
     /**
+     * Id from Price rule where belong this discount
+     *
+     * @var float
+     */
+    public $id;
+
+    /**
      * Discount amount if discount is fixed
      *
      * @var float
@@ -19,11 +26,11 @@ class Discount implements Arrayable
     public $percentage;
 
     /**
-     * Maximum discount amount if discount type is DISCOUNT_SUBTOTAL_FIXED_AMOUNT
+     * Maximum discount amount if discount type is by percentage
      *
      * @var float
      */
-    public $maximumDiscountPercentageAmount;
+    public $maximumPercentageAmount;
 
     /**
      * Set if apply discount to subtotal or total and shipping amount or only subtotal or total
@@ -33,17 +40,27 @@ class Discount implements Arrayable
     public $applyShippingAmount;
 
     /**
+     * Discount amount calculated
+     *
+     * @var float
+     */
+    public $amount;
+
+
+    /**
      * Discount constructor.
+     * @param $id
      * @param $fixed
      * @param $percentage
-     * @param $maximumDiscountPercentageAmount
+     * @param $maximumPercentageAmount
      * @param $applyShippingAmount
      */
-    public function __construct($fixed, $percentage, $maximumDiscountPercentageAmount, $applyShippingAmount)
+    public function __construct($id, $fixed, $percentage, $maximumPercentageAmount, $applyShippingAmount)
     {
+        $this->id                               = $id;
         $this->fixed                            = $fixed;
         $this->percentage                       = $percentage;
-        $this->maximumDiscountPercentageAmount  = $maximumDiscountPercentageAmount;
+        $this->maximumPercentageAmount          = $maximumPercentageAmount;
         $this->applyShippingAmount              = $applyShippingAmount;
     }
 

@@ -46,6 +46,13 @@ class PriceRule
     public $discount;
 
     /**
+     * Amount generate by discount from this price rule
+     *
+     * @var int
+     */
+    public $discountAmount;
+
+    /**
      * Check if this price rule is combinable with other price rules
      *
      * @var boolean
@@ -53,25 +60,11 @@ class PriceRule
     public $combinable;
 
     /**
-     * Maximum discount amount if discount type is DISCOUNT_SUBTOTAL_FIXED_AMOUNT
-     *
-     * @var float
-     */
-    public $maximumDiscountAmount; // todo revisar el nombre y sustituir
-
-    /**
      * Check if this price rule has free shipping
      *
      * @var boolean
      */
     public $freeShipping;
-
-    /**
-     * Discount amount calculated
-     *
-     * @var float
-     */
-    public $discountAmount;
 
 
     /**
@@ -82,24 +75,20 @@ class PriceRule
      * @param bool      $combinable
      * @param float     $discountPercentage
      * @param float     $discountFixed
-     * @param float     $maximumDiscountAmount
+     * @param float     $maximumPercentageDiscountAmount
      * @param bool      $applyShippingAmount
      * @param bool      $freeShipping
      */
-    public function __construct($name, $description, $discountType, $freeShipping = false, $discountFixed = null, $discountPercentage = null, $maximumDiscountAmount = null, $applyShippingAmount = false, $combinable = true)
+    public function __construct($name, $description, $discountType, $freeShipping = false, $discountFixed = null, $discountPercentage = null, $maximumPercentageDiscountAmount = null, $applyShippingAmount = false, $combinable = true)
     {
         $this->name                     = $name;
         $this->description              = $description;
         $this->discountType             = $discountType;
         $this->combinable               = $combinable;
-        $this->discountPercentage       = $discountPercentage;
-        $this->discountFixed            = $discountFixed;
-        $this->maximumDiscountAmount    = $maximumDiscountAmount;
-        $this->applyShippingAmount      = $applyShippingAmount;
         $this->freeShipping             = $freeShipping;
         $this->id                       = $this->generateId();
 
-        $this->discount = new Discount($discountFixed, $discountPercentage, $maximumDiscountAmount, $applyShippingAmount);
+        $this->discount = new Discount($this->id, $discountFixed, $discountPercentage, $maximumPercentageDiscountAmount, $applyShippingAmount);
 
     }
 
@@ -137,7 +126,7 @@ class PriceRule
      */
     public function getDiscountPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
     {
-        return number_format($this->discountPercentage, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discount->percentage, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
@@ -150,7 +139,7 @@ class PriceRule
      */
     public function getDiscountFixed($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
     {
-        return number_format($this->discountFixed, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discount->fixed, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**

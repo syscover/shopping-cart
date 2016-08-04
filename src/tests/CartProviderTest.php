@@ -32,9 +32,9 @@ class CartProviderTest extends TestCase
         $this->expectsEvents('cart.added');
 
         CartProvider::instance()->add([
-            new Item('293ad', 'Product 1', 1, 9.99, 1.000, true),
-            new Item('283ad', 'Product 2', 3, 10.00, 1.000, true),
-            new Item('244ad', 'Product 3', 2, 20.50, 1.000, true)
+            new Item('293ad', 'Product 1', 1, 9.99, 1.000),
+            new Item('283ad', 'Product 2', 3, 10.00, 1.000),
+            new Item('244ad', 'Product 3', 2, 20.50, 1.000)
         ]);
 
         $this->assertEquals(3, CartProvider::instance()->getCartItems()->count());
@@ -72,7 +72,7 @@ class CartProviderTest extends TestCase
             $this->assertEquals(133.100, CartProvider::instance()->getCartItems()->first()->total);
 
             $this->assertEquals('21,00', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxAmount());
-            $this->assertEquals(['21'], CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxRate());
+            $this->assertEquals('21', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxRate());
             $this->assertEquals('IVA', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->name);
 
             $this->assertEquals('12,10', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxAmount());
@@ -142,7 +142,8 @@ class CartProviderTest extends TestCase
                 'My first price rule',
                 'For being a good customer',
                 PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE,
-                true,
+                false,
+                null,
                 10.00
             )
         );
@@ -153,15 +154,16 @@ class CartProviderTest extends TestCase
         {
             $this->assertEquals('100,00', CartProvider::instance()->getCartItems()->first()->getSubtotal());
             $this->assertEquals(100.00, CartProvider::instance()->getCartItems()->first()->subtotal);
-            $this->assertEquals('33,10', CartProvider::instance()->getCartItems()->first()->getTaxAmount());
-            $this->assertEquals('133,10', CartProvider::instance()->getCartItems()->first()->getTotal());
-            $this->assertEquals(133.100, CartProvider::instance()->getCartItems()->first()->total);
 
-            $this->assertEquals('21,00', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxAmount());
+            $this->assertEquals('29,79', CartProvider::instance()->getCartItems()->first()->getTaxAmount());
+            $this->assertEquals('119,79', CartProvider::instance()->getCartItems()->first()->getTotal());
+            $this->assertEquals(119.789999999999992041921359486877918243408203125, CartProvider::instance()->getCartItems()->first()->total);
+
+            $this->assertEquals('18,90', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxAmount());
             $this->assertEquals('21', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxRate());
             $this->assertEquals('IVA', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->name);
 
-            $this->assertEquals('12,10', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxAmount());
+            $this->assertEquals('10,89', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxAmount());
             $this->assertEquals('10', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxRate());
             $this->assertEquals('OTHER IVA', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->name);
         }
@@ -171,7 +173,7 @@ class CartProviderTest extends TestCase
             $this->assertEquals('75,13', CartProvider::instance()->getCartItems()->first()->getSubtotal());
             $this->assertEquals(75.1314800901577797276331693865358829498291015625, CartProvider::instance()->getCartItems()->first()->subtotal);
 
-            $this->assertEquals(10, CartProvider::instance()->getCartItems()->first()->discountSubtotalPercentage);
+            $this->assertEquals(10, CartProvider::instance()->getCartItems()->first()->discountSubtotalPercentage->sum('percentage'));
             $this->assertEquals('10', CartProvider::instance()->getCartItems()->first()->getDiscountSubtotalPercentage());
             $this->assertEquals(7.51314800902, CartProvider::instance()->getCartItems()->first()->discountAmount);
             $this->assertEquals('7,51', CartProvider::instance()->getCartItems()->first()->getDiscountAmount());
