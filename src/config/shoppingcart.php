@@ -12,8 +12,8 @@ return [
     */
 
     // Tax default values
-    'taxDefaultCountry'             => env('TAX_DEFAULT_COUNTRY', 'ES'),
-    'taxDefaultCustomerClass'       => env('TAX_DEFAULT_CUSTOMER_CLASS', 1),
+    'taxCountry'                    => env('TAX_COUNTRY', 'ES'),
+    'taxCustomerClass'              => env('TAX_CUSTOMER_CLASS', 1),
 
     // 1 excluding tax, 2 including tax
     'taxProductPrices'              => env('TAX_PRODUCT_PRICES', 1),
