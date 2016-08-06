@@ -26,11 +26,11 @@ class Item implements Arrayable
     public $name;
 
     /**
-     * The price without TAX of the cart item.
+     * The price per unit without tax.
      *
      * @var float
      */
-    public $price;
+    private $unitPrice;
 
     /**
      * set if product is transportable.
@@ -131,13 +131,13 @@ class Item implements Arrayable
      * @param int|string                            $id
      * @param string                                $name
      * @param float                                 $quantity
-     * @param float                                 $price
+     * @param float                                 $unitPrice
      * @param boolean                               $transportable
      * @param float                                 $weight
      * @param array|\Syscover\ShoppingCart\TaxRule  $taxRule
      * @param array                                 $options
      */
-    public function __construct($id, $name, $quantity, $price, $weight = 1.000, $transportable = true, $taxRule = [], array $options = [])
+    public function __construct($id, $name, $quantity, $unitPrice, $weight = 1.000, $transportable = true, $taxRule = [], array $options = [])
     {
         if(empty($id))
             throw new \InvalidArgumentException('Please supply a valid identifier.');
@@ -145,7 +145,7 @@ class Item implements Arrayable
         if(empty($name))
             throw new \InvalidArgumentException('Please supply a valid name.');
 
-        if(strlen($price) < 0 || ! is_numeric($price))
+        if(strlen($unitPrice) < 0 || ! is_numeric($unitPrice))
             throw new \InvalidArgumentException('Please supply a valid price.');
 
         if(! is_bool($transportable))
@@ -156,7 +156,7 @@ class Item implements Arrayable
 
         $this->id               = $id;
         $this->name             = $name;
-        $this->price            = floatval($price);
+        $this->unitPrice        = floatval($unitPrice);
         $this->transportable    = $transportable;
         $this->weight           = floatval($weight);
         $this->options          = new CartItemOptions($options);
@@ -228,6 +228,15 @@ class Item implements Arrayable
         {
             return $this->taxRules->sum('taxAmount');
         }
+
+        if($attribute === 'price')
+        {
+            if(config('shoppingcart.taxProductDisplayPrices') == Cart::PRICE_WITHOUT_TAX)
+                return $this->unitPrice;
+            elseif(config('shoppingcart.taxProductDisplayPrices') == Cart::PRICE_WITH_TAX)
+                return $this->calculateTotalAndTaxOverSubtotal($this->unitPrice);
+        }
+
         return null;
     }
 
@@ -237,7 +246,7 @@ class Item implements Arrayable
      * @param   array|\Syscover\ShoppingCart\TaxRule        $taxRule
      * @return  \Syscover\ShoppingCart\CartItemTaxRules
      */
-    private function addTaxRule($taxRule)
+    public function addTaxRule($taxRule)
     {
         if(is_array($taxRule))
         {
@@ -502,20 +511,21 @@ class Item implements Arrayable
     /**
      * Calculate all amounts, this function is called, when change any property from cartItem
      *
-     * @return void
+     * @param   null    $mode   you can force mode of calculate amounts, with tax or without tax
+     * @return  void
      */
-    private function calculateAmounts()
+    public function calculateAmounts($mode = null)
     {
         // subtotal calculate
-        if(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX || $this->taxRules === null || $this->taxRules->count() == 0)
+        if(($mode == Cart::PRICE_WITHOUT_TAX) || ($mode == null && config('shoppingcart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX || $this->taxRules === null || $this->taxRules->count() == 0))
         {
             // calculate subtotal
-            $this->subtotal = $this->quantity * $this->price;
+            $this->subtotal = $this->quantity * $this->unitPrice;
 
             if($this->discountSubtotalFixedAmount->sum('fixed') > 0)
             {
                 // calculate subtotal including with discount fixed amount
-                $this->subtotalWithDiscounts = ($this->quantity * $this->price) - $this->discountSubtotalFixedAmount->sum('amount');
+                $this->subtotalWithDiscounts = $this->subtotal - $this->discountSubtotalFixedAmount->sum('amount');
             }
             else
             {
@@ -539,22 +549,25 @@ class Item implements Arrayable
             $this->applyDiscountsPercentage();
         }
 
-        elseif(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
+        elseif(($mode == Cart::PRICE_WITH_TAX) || ($mode == null && config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX))
         {
             // total calculate
-            $this->total = $this->quantity * $this->price;
+            $this->total        = $this->quantity * $this->unitPrice;
+
+            // calculate unit price without tax
+            $this->unitPrice    = $this->calculateSubtotalAndTaxOverTotal($this->unitPrice);
 
             if($this->discountTotalFixedAmount->sum('fixed') > 0)
             {
                 // calculate total including possible discount fixed amount
-                $this->total = ($this->quantity * $this->price) - $this->discountTotalFixedAmount->sum('amount');
+                $this->total = $this->total - $this->discountTotalFixedAmount->sum('amount');
             }
 
             // calculate all amounts for price with tax
             $this->subtotalWithDiscounts = $this->calculateSubtotalAndTaxOverTotal($this->total);
 
-            // to get subtotal without discount, subtotal is the amount without any discount
-            $this->subtotal = ($this->subtotalWithDiscounts * ($this->quantity * $this->price)) / $this->total;
+            // subtotal is the amount without any discount
+            $this->subtotal = $this->quantity * $this->unitPrice;
 
             // calculate discount subtotal fixed amount
             if($this->discountSubtotalFixedAmount->sum('fixed') > 0)
@@ -709,7 +722,7 @@ class Item implements Arrayable
             'id'            => $this->id,
             'name'          => $this->name,
             'quantity'      => $this->quantity,
-            'price'         => $this->price,
+            'initPrice'     => $this->initPrice,
             'transportable' => $this->transportable,
             'weight'        => $this->weight,
             'options'       => $this->options,
