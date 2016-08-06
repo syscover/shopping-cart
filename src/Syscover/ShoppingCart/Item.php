@@ -33,6 +33,13 @@ class Item implements Arrayable
     private $unitPrice;
 
     /**
+     * The input price when instance object.
+     *
+     * @var float
+     */
+    private $inputPrice;
+
+    /**
      * set if product is transportable.
      *
      * @var boolean
@@ -131,13 +138,13 @@ class Item implements Arrayable
      * @param int|string                            $id
      * @param string                                $name
      * @param float                                 $quantity
-     * @param float                                 $unitPrice
+     * @param float                                 $inputPrice
      * @param boolean                               $transportable
      * @param float                                 $weight
      * @param array|\Syscover\ShoppingCart\TaxRule  $taxRule
      * @param array                                 $options
      */
-    public function __construct($id, $name, $quantity, $unitPrice, $weight = 1.000, $transportable = true, $taxRule = [], array $options = [])
+    public function __construct($id, $name, $quantity, $inputPrice, $weight = 1.000, $transportable = true, $taxRule = [], array $options = [])
     {
         if(empty($id))
             throw new \InvalidArgumentException('Please supply a valid identifier.');
@@ -145,7 +152,7 @@ class Item implements Arrayable
         if(empty($name))
             throw new \InvalidArgumentException('Please supply a valid name.');
 
-        if(strlen($unitPrice) < 0 || ! is_numeric($unitPrice))
+        if(strlen($inputPrice) < 0 || ! is_numeric($inputPrice))
             throw new \InvalidArgumentException('Please supply a valid price.');
 
         if(! is_bool($transportable))
@@ -156,7 +163,7 @@ class Item implements Arrayable
 
         $this->id               = $id;
         $this->name             = $name;
-        $this->unitPrice        = floatval($unitPrice);
+        $this->inputPrice        = floatval($inputPrice);
         $this->transportable    = $transportable;
         $this->weight           = floatval($weight);
         $this->options          = new CartItemOptions($options);
@@ -519,6 +526,9 @@ class Item implements Arrayable
         // subtotal calculate
         if(($mode == Cart::PRICE_WITHOUT_TAX) || ($mode == null && config('shoppingcart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX || $this->taxRules === null || $this->taxRules->count() == 0))
         {
+            if(! isset($this->unitPrice))
+                $this->unitPrice = $this->inputPrice;
+
             // calculate subtotal
             $this->subtotal = $this->quantity * $this->unitPrice;
 
@@ -552,10 +562,11 @@ class Item implements Arrayable
         elseif(($mode == Cart::PRICE_WITH_TAX) || ($mode == null && config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX))
         {
             // total calculate
-            $this->total        = $this->quantity * $this->unitPrice;
+            $this->total = $this->quantity * $this->inputPrice;
 
-            // calculate unit price without tax
-            $this->unitPrice    = $this->calculateSubtotalAndTaxOverTotal($this->unitPrice);
+            if(! isset($this->unitPrice))
+                // calculate unit price without tax
+                $this->unitPrice = $this->calculateSubtotalAndTaxOverTotal($this->inputPrice);
 
             if($this->discountTotalFixedAmount->sum('fixed') > 0)
             {
