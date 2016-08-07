@@ -46,7 +46,7 @@ To add items we have create a Item object with this properties:
 * id:string = Id of product
 * name:string = Name of product
 * quantity:float = Quantity of product than you want add
-* price:float = Price product by unit 
+* inputPrice:float = Price product by unit 
 * weight:float [default 1.000] = Weight of product
 * transportable:boolean [default true] = Set if product can to be delivery
 * taxRule:TaxRule[] [default []] = Set tax rules for this product
@@ -97,6 +97,8 @@ CartProvider::instance()->add([
         ], ['size' => 'M'])
 ]);
 ```
+
+
 
 
 To update quantity from a item you have setQuantity method, you'll pass the update method the rowId and the new quantity
@@ -157,6 +159,15 @@ CartProvider::instance()->subtotal;
 
 // or subtotal price formatted
 CartProvider::instance()->getSubtotal();
+```
+
+
+Get tax amount from this item 
+```
+CartProvider::instance()->taxAmount;
+
+// or tax amount formatted
+CartProvider::instance()->getTaxAmount();
 ```
 
 
