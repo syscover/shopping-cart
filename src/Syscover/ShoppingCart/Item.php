@@ -713,6 +713,17 @@ class Item implements Arrayable
      *
      * @return void
      */
+    public function resetTaxRules()
+    {
+        $this->taxRules = new CartItemTaxRules();
+        $this->resetTaxAmounts();
+    }
+
+    /**
+     * Reset tax amount before calculate
+     *
+     * @return void
+     */
     private function resetTaxAmounts()
     {
         foreach ($this->taxRules as &$taxRule)
