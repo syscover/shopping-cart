@@ -98,8 +98,27 @@ CartProvider::instance()->add([
 ]);
 ```
 
+Once defined the rules, you can change them using this method
+```
+foreach (CartProvider::instance()->getCartItems() as $item)
+{
+    $item->resetTaxRules();
+}
+```
 
+Of course, you can also reload other rules if necessary
+```
+foreach (CartProvider::instance()->getCartItems() as $item)
+{
+    $item->addTaxRule(new TaxRule('IVA', 18, 0, 0),);
+}
+```
 
+Remember this, if you reset taxRules or add new tax rules to item, you must force calculate amounts from subtotal
+```
+$item->calculateAmounts(Cart::PRICE_WITHOUT_TAX);
+```
+ 
 
 To update quantity from a item you have setQuantity method, you'll pass the update method the rowId and the new quantity
 ```
