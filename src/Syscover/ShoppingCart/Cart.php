@@ -44,18 +44,25 @@ class Cart
     protected $hasCartPriceRuleNotCombinable;
 
     /**
-     * check if cart has free shipping
-     *
-     * @var boolean
-     */
-    protected $hasFreeShipping;
-
-    /**
      * check if cart has shipping products
      *
      * @var boolean
      */
     protected $hasShipping;
+
+    /**
+     * data of shipping
+     *
+     * @var array
+     */
+    private $shipping;
+
+    /**
+     * check if cart has free shipping
+     *
+     * @var boolean
+     */
+    protected $hasFreeShipping;
 
 	/**
 	 * shipping amount
@@ -383,6 +390,26 @@ class Cart
     public function getPriceRules()
     {
         return $this->cartPriceRules;
+    }
+
+    /**
+     * Get shipping data
+     *
+     * @return array
+     */
+    public function getShipping()
+    {
+        return $this->shipping;
+    }
+
+    /**
+     * Set shipping
+     *
+     * @return array
+     */
+    public function setShipping($shipping)
+    {
+        $this->shipping = $shipping;
     }
 
     /**
