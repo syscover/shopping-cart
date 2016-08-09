@@ -469,7 +469,7 @@ class Cart
             $this->cartItems->transform(function ($item, $key) use ($priceRule) {
                 // add discount percentage to item discount subtotal percentage
                 return $item->setDiscountSubtotalPercentage(
-                    $priceRule->discount // add discount to cart item
+                    clone $priceRule->discount // add discount object to cart item, clone discount object to loose reference to same object
                 );
             });
         }
@@ -480,7 +480,7 @@ class Cart
             $this->cartItems->transform(function ($item, $key) use ($priceRule) {
                 // add discount percentage to item discount total percentage
                 return $item->setDiscountTotalPercentage(
-                    $priceRule->discount // add discount to cart item
+                    clone $priceRule->discount // add discount object to cart item, clone discount object to loose reference to same object
                 );
             });
         }
@@ -511,7 +511,7 @@ class Cart
                         $priceRule->discount->amount = $discountAmount;
 
                         $cartItem->setDiscountSubtotalFixed(
-                            $priceRule->discount // add discount to cart item
+                            clone $priceRule->discount // add discount to cart item
                         );
                         $discountAmount = 0;
                         break;
@@ -524,7 +524,7 @@ class Cart
                         $priceRule->discount->amount = $discountAmount;
 
                         $cartItem->setDiscountSubtotalFixed(
-                            $priceRule->discount // add discount to cart item
+                            clone $priceRule->discount // add discount to cart item
                         );
                     }
                 }
@@ -562,7 +562,7 @@ class Cart
 
                         // amount to discount is less or equal than total
                         $cartItem->setDiscountTotalFixed(
-                            $priceRule->discount // add discount to cart item
+                            clone $priceRule->discount // add discount to cart item
                         );
                         $discountAmount = 0;
                         break;
@@ -575,7 +575,7 @@ class Cart
                         $priceRule->discount->amount = $discountAmount;
 
                         $cartItem->setDiscountTotalFixed(
-                            $priceRule->discount
+                            clone $priceRule->discount
                         );
                     }
                 }
