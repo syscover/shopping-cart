@@ -156,6 +156,9 @@ class Cart
             $this->applyCartPricesRulesWithPercentageDiscountsToCartItem($cartItem->rowId);
         }
 
+        // update discounts on priceRules collection
+        $this->updateCartPercentageDiscounts();
+
         event('cart.added', $cartItem);
 
         if(! session()->has($this->instance))
@@ -176,6 +179,9 @@ class Cart
         // delete object with all data to add new object later
         $this->cartItems->pull($rowId);
         $this->cartItems->put($item->rowId, $item);
+
+        // update discounts on priceRules collection
+        $this->updateCartPercentageDiscounts();
     }
 
     /**
@@ -198,7 +204,14 @@ class Cart
 
         // destroy all properties of cart, if is empty
         if($this->cartItems->count() === 0)
+        {
             $this->destroy();
+        }
+        else
+        {
+            // update discounts on priceRules collection
+            $this->updateCartPercentageDiscounts();
+        }
     }
 
     /**
@@ -350,6 +363,9 @@ class Cart
         {
             $this->remove($rowId);
         }
+
+        // update discounts on priceRules collection
+        $this->updateCartPercentageDiscounts();
     }
 
     /**
