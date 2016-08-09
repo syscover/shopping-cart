@@ -193,6 +193,53 @@ class CartProviderTest extends TestCase
         }
     }
 
+    public function testCartCanAddWithTaxRulesWithDiscountTotalPercentage()
+    {
+        $this->expectsEvents('cart.added');
+
+        CartProvider::instance()->add(new Item('294ad', 'Product 1', 1, 100, 1.000, true, [
+            new TaxRule('IVA', 21.00, 0, 0)
+        ]));
+        CartProvider::instance()->add(new Item('295ad', 'Product 2', 1, 107.69, 1.000, true, [
+            new TaxRule('IVA', 21.00, 0, 0)
+        ]));
+
+        $this->assertEquals(2, CartProvider::instance()->getCartItems()->count());
+
+        if(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX)
+        {
+
+        }
+
+        if(config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX)
+        {
+            $this->assertEquals('171,64', CartProvider::instance()->getSubtotal());
+            $this->assertEquals('36,05', CartProvider::instance()->getTaxAmount());
+            $this->assertEquals('0,00', CartProvider::instance()->getDiscountAmount());
+            $this->assertEquals('207,69', CartProvider::instance()->getTotal());
+
+            // apply 10% percentage discount over total
+            CartProvider::instance()->addCartPriceRule(
+                new PriceRule(
+                    'discount 10% percentage',
+                    'For being a good customer',
+                    PriceRule::DISCOUNT_TOTAL_PERCENTAGE,
+                    false,
+                    null,
+                    10.00
+                )
+            );
+
+            // check new amounts
+            $this->assertEquals('10,00', CartProvider::instance()->getCartItems()->get('92f38118c1830f0893f9d3135bbcc705')->getDiscountAmount());
+            $this->assertEquals('10,77', CartProvider::instance()->getCartItems()->get('4213a65a817336f9e62699ee2c1d16f6')->getDiscountAmount());
+            $this->assertEquals('171,64', CartProvider::instance()->getSubtotal());
+            $this->assertEquals('32,44', CartProvider::instance()->getTaxAmount());
+            $this->assertEquals('20,77', CartProvider::instance()->getDiscountAmount());
+            $this->assertEquals('186,92', CartProvider::instance()->getTotal());
+        }
+    }
+
     public function testCartCanAddMultiple()
     {
         $this->expectsEvents('cart.added');

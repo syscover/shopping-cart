@@ -241,7 +241,7 @@ class Item implements Arrayable
             if(config('shoppingcart.taxProductDisplayPrices') == Cart::PRICE_WITHOUT_TAX)
                 return $this->unitPrice;
             elseif(config('shoppingcart.taxProductDisplayPrices') == Cart::PRICE_WITH_TAX)
-                return $this->calculateTotalAndTaxOverSubtotal($this->unitPrice);
+                return $this->calculateUnitPriceWithTax($this->unitPrice);
         }
 
         return null;
@@ -568,17 +568,21 @@ class Item implements Arrayable
                 // calculate unit price without tax
                 $this->unitPrice = $this->calculateSubtotalAndTaxOverTotal($this->inputPrice);
 
+            // subtotal is the amount without any discount
+            $this->subtotal = $this->quantity * $this->unitPrice;
+
             if($this->discountTotalFixedAmount->sum('fixed') > 0)
             {
                 // calculate total including possible discount fixed amount
                 $this->total = $this->total - $this->discountTotalFixedAmount->sum('amount');
+
+                // calculate subtotal with total discounts
+                $this->subtotalWithDiscounts = $this->calculateSubtotalAndTaxOverTotal($this->total);
             }
-
-            // calculate all amounts for price with tax
-            $this->subtotalWithDiscounts = $this->calculateSubtotalAndTaxOverTotal($this->total);
-
-            // subtotal is the amount without any discount
-            $this->subtotal = $this->quantity * $this->unitPrice;
+            else
+            {
+                $this->subtotalWithDiscounts = $this->subtotal;
+            }
 
             // calculate discount subtotal fixed amount
             if($this->discountSubtotalFixedAmount->sum('fixed') > 0)
@@ -706,6 +710,36 @@ class Item implements Arrayable
 
         // return subtotal
         return $this->total - $this->taxRules->sum('taxAmount');
+    }
+
+    /**
+     * Calculate unit price with tax, does not account for discounts.
+     * it is to calculate the result of the function getPrice if display prices are with tax
+     *
+     * @param   float   $unitPrice
+     * @return  float
+     */
+    private function calculateUnitPriceWithTax($unitPrice)
+    {
+        // calculate amounts of each taxRule
+        $taxRules       = $this->taxRules->sortBy('priority');
+        $lastPriority   = null;
+        $unitPriceAux   = $unitPrice;
+        $taxAmount      = 0;
+
+        foreach ($taxRules as $taxRule)
+        {
+            if($lastPriority == null || $lastPriority != $taxRule->priority)
+            {
+                // if is a different priority, calculate tax over subtotal plus previous tax amounts
+                $lastPriority   = $taxRule->priority;
+                $unitPriceAux  += $taxAmount;
+            }
+            $taxAmount += $unitPriceAux * ($taxRule->taxRate / 100);
+        }
+
+        // return priceunit + total
+        return $unitPrice + $taxAmount;
     }
 
     /**
