@@ -40,6 +40,48 @@ phpunit tests/CartProviderTest
 ```
 
 
+## General configuration environment values
+We indicate configuration variables available, to change them what you should do from the file environment variables .env
+
+### Set product price tax [default value 1]
+Defines the types of prices that are introduced in products, this option is consulted when you create or update a product
+You have this values:
+* Value: 1 *Excluding tax*
+* Value: 2 *Including tax*
+
+```
+TAX_PRODUCT_PRICES=1
+```
+
+### Set shipping price tax [default value 1]
+Defines the types of prices that are introduced in shipping prices, this option is consulted when you create or update a shipping price
+* Value: 1 *Excluding tax*
+* Value: 2 *Including tax*
+
+```
+TAX_SHIPPING_PRICES=1
+```
+
+### Set product display price tax [default value 1]
+Defines how you want display product prices
+You have this values:
+* Value: 1 *Excluding tax*
+* Value: 2 *Including tax*
+
+```
+TAX_PRODUCT_DISPLAY_PRICES=1
+```
+
+### Set shipping display price tax [default value 1]
+Defines how you want display shipping prices
+* Value: 1 *Excluding tax*
+* Value: 2 *Including tax*
+
+```
+TAX_SHIPPING_DISPLAY_PRICES=1
+```
+
+
 ##The shoppingcart gives you the following methods to use:
 
 To add items we have create a Item object with this properties:
@@ -181,7 +223,7 @@ CartProvider::instance()->getSubtotal();
 ```
 
 
-Get tax amount from this item 
+Get tax amount from all items 
 ```
 CartProvider::instance()->taxAmount;
 
