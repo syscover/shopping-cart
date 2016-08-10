@@ -248,6 +248,11 @@ class Item implements Arrayable
                 return $this->calculateUnitPriceWithTax($this->unitPrice);
         }
 
+        if($attribute === 'quantity')
+        {
+            return $this->quantity;
+        }
+
         return null;
     }
 
@@ -384,16 +389,6 @@ class Item implements Arrayable
     }
 
     /**
-     * Get the quantity for this cart item.
-     *
-     * @return float
-     */
-    public function getQuantity()
-    {
-        return $this->quantity;
-    }
-
-    /**
      * Get format discountSubtotalPercentage over this cart item.
      *
      * @param   int     $decimals
@@ -417,6 +412,19 @@ class Item implements Arrayable
     public function getDiscountTotalPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
     {
         return number_format($this->discountTotalPercentage, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get format quantity over this cart item.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  string
+     */
+    public function getQuantity($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->quantity, $decimals, $decimalPoint, $thousandSeperator);
     }
 
 

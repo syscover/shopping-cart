@@ -1,6 +1,7 @@
 <?php namespace Syscover\ShoppingCart;
 
 use Closure;
+use Syscover\ShoppingCart\Exceptions\ShoppingCartNotCombinablePriceRuleException;
 
 /**
  * Class Cart
@@ -161,6 +162,23 @@ class Cart
             return $this->shippingAmount;
         }
 
+        if($attribute === 'weight')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($weight, Item $item) {
+                return $weight + ($item->weight * $item->quantity);
+            }, 0);
+        }
+
+        if($attribute === 'transportableWeight')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($weight, Item $item) {
+                if($item->transportable === true)
+                    return $weight + ($item->weight * $item->quantity);
+            }, 0);
+        }
+
         return null;
     }
 
@@ -247,7 +265,7 @@ class Cart
     public function getQuantity()
     {
         return $this->cartItems->reduce(function($quantity, $item){
-            return $quantity += $item->getQuantity();
+            return $quantity += $item->quantity;
         }, 0);
     }
 
@@ -332,7 +350,7 @@ class Cart
         $this->cartItems->get($rowId)->setQuantity($quantity);
 
         // if quantity is less than zere, remove item
-        if ($this->cartItems->get($rowId)->getQuantity() <= 0)
+        if ($this->cartItems->get($rowId)->quantity <= 0)
         {
             $this->remove($rowId);
         }
@@ -402,7 +420,7 @@ class Cart
         // increment quantity if exist a product with de same rowId
         if($this->cartItems->has($cartItem->rowId))
         {
-            $this->cartItems->get($cartItem->rowId)->setQuantity($cartItem->getQuantity() + $this->cartItems->get($cartItem->rowId)->getQuantity());
+            $this->cartItems->get($cartItem->rowId)->setQuantity($cartItem->quantity + $this->cartItems->get($cartItem->rowId)->quantity);
         }
         else
         {
@@ -501,7 +519,8 @@ class Cart
     /**
      * Add CartPriceRule to collection CartPriceRuleCollection
      *
-     * @param  \Syscover\ShoppingCart\PriceRule  $priceRule
+     * @param   PriceRule $priceRule
+     * @throws  ShoppingCartNotCombinablePriceRuleException
      * @return void
      */
     public function addCartPriceRule(PriceRule $priceRule)
@@ -514,7 +533,7 @@ class Cart
         else
         {
             if($this->hasCartPriceRuleNotCombinable)
-                throw new \InvalidArgumentException('You can\'t apply price rule, you have a not combinable price rule in shopping cart.');
+                throw new ShoppingCartNotCombinablePriceRuleException('You can\'t apply price rule, you have a not combinable price rule in shopping cart.');
 
             if($priceRule->discountType === PriceRule::DISCOUNT_SUBTOTAL_PERCENTAGE && $this->cartPriceRules->where('discountType', PriceRule::DISCOUNT_TOTAL_PERCENTAGE)->count() > 0)
                 throw new \InvalidArgumentException('You can\'t apply discount over subtotal, when you already have discounts over total.');
@@ -739,32 +758,10 @@ class Cart
         foreach($this->cartItems as $item)
         {
             if($item->transportable === true)
+            {
                 $this->hasShipping = true;
                 break;
+            }
         }
     }
-
-
-
-
-// README
-//
-//	/**
-//	 * get rule not combinable from cart, there can only be one
-//	 *
-//	 * @return mixed|null
-//	 */
-//	public function getCartPriceRuleNotCombinable()
-//	{
-//		$cartPriceRulesContent = $this->getCartPriceRuleCollection();
-//
-//		foreach($cartPriceRulesContent as $cartPriceRule)
-//		{
-//			if($cartPriceRule->combinable_120 == false)
-//			{
-//				return $cartPriceRule;
-//			}
-//		}
-//		return null;
-//	}
 }
