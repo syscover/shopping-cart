@@ -83,11 +83,278 @@ class Cart
 		$this->cartItems 			            = new CartItems();
 		$this->cartPriceRules 		            = new CartPriceRules();
         $this->hasCartPriceRuleNotCombinable 	= false;
-
-		//$this->freeShipping					= false;
-		//$this->shippingAmount				    = 0;
-		//$this->shipping						= false;
 	}
+
+    //*****************
+    // Getters
+    //*****************
+
+    /**
+     * Magic method to make accessing private attributes
+     *
+     * @param   string $attribute
+     * @return  float|null
+     */
+    public function __get($attribute)
+    {
+        if($attribute === 'total') {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($total, Item $item) {
+                return $total + $item->total;
+            }, 0);
+        }
+
+        if($attribute === 'taxAmount') {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($taxAmount, Item $item) {
+                return $taxAmount + $item->taxAmount;
+            }, 0);
+        }
+
+        if($attribute === 'subtotal')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($subTotal, Item $item) {
+                return $subTotal + $item->subtotal;
+            }, 0);
+        }
+
+        if($attribute === 'discountSubtotalPercentageAmount')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($discountSubtotalPercentageAmount, Item $item) {
+                return $discountSubtotalPercentageAmount + $item->discountSubtotalPercentageAmount;
+            }, 0);
+        }
+
+        if($attribute === 'discountTotalPercentageAmount')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($discountTotalPercentageAmount, Item $item) {
+                return $discountTotalPercentageAmount + $item->discountTotalPercentageAmount;
+            }, 0);
+        }
+
+        if($attribute === 'discountSubtotalAmount')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($discountSubtotalAmount, Item $item) {
+                return $discountSubtotalAmount + $item->discountSubtotalPercentageAmount + $item->discountSubtotalFixedAmount;
+            }, 0);
+        }
+
+        if($attribute === 'discountTotalAmount')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($discountTotalAmount, Item $item) {
+                return $discountTotalAmount + $item->discountTotalPercentageAmount + $item->discountTotalFixedAmount;
+            }, 0);
+        }
+
+        if($attribute === 'discountAmount')
+        {
+            return $this->discountSubtotalAmount + $this->discountTotalAmount;
+        }
+
+        if($attribute === 'shippingAmount')
+        {
+            return $this->shippingAmount;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the cart items
+     *
+     * @return \Syscover\ShoppingCart\CartItems
+     */
+    public function getCartItems()
+    {
+        return $this->cartItems;
+    }
+
+    /**
+     * Get the subtotal formated of the items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getSubtotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->subtotal, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the taxAmount formated of the items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->taxAmount, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the subtotal formated of the items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getTotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->total, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the discount amount formated from all items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the shipping amount formated.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getShippingAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->shippingAmount, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the number of items in the cart
+     *
+     * @return float
+     */
+    public function getQuantity()
+    {
+        return $this->cartItems->reduce(function($quantity, $item){
+            return $quantity += $item->getQuantity();
+        }, 0);
+    }
+
+    /**
+     * Get Collection with tax rules objects
+     *
+     * @return \Syscover\ShoppingCart\CartItemTaxRules
+     */
+    public function getTaxRules()
+    {
+        $taxRules = new CartItemTaxRules();
+
+        foreach ($this->cartItems as $cartItem)
+        {
+            foreach ($cartItem->taxRules as $taxRule)
+            {
+                if($taxRules->has($taxRule->id))
+                {
+                    // if find any tax with the same ID, sum yours rates
+                    $taxRules->get($taxRule->id)->taxAmount += $taxRule->taxAmount;
+                }
+                else
+                {
+                    // add new tax rule, clone object because otherwise object save reference with taxRule from carItem
+                    // everytime that we change taxAmount it would be changed in cartItem
+                    $taxRules->put($taxRule->id, clone $taxRule);
+                }
+            }
+        }
+
+        return $taxRules;
+    }
+
+    /**
+     * Get Array with price rules objects
+     *
+     * @return \Syscover\ShoppingCart\CartPriceRules
+     */
+    public function getPriceRules()
+    {
+        return $this->cartPriceRules;
+    }
+
+    /**
+     * Get shipping data
+     *
+     * @return array
+     */
+    public function getShipping()
+    {
+        return $this->shipping;
+    }
+
+
+    //*****************
+    // Setters
+    //*****************
+
+    /**
+     * Magic method to set private attributes
+     *
+     * @param  string  $key
+     * @param  mixed  $value
+     * @return void
+     */
+    public function __set($key, $value)
+    {
+        if($key === 'shippingAmount')
+        {
+            $this->shippingAmount = $value;
+        }
+    }
+
+    /**
+     * Set the number of items of a item cart
+     *
+     * @param int|string    $rowId
+     * @param int|float     $quantity
+     */
+    public function setQuantity($rowId, $quantity)
+    {
+        $this->cartItems->get($rowId)->setQuantity($quantity);
+
+        // if quantity is less than zere, remove item
+        if ($this->cartItems->get($rowId)->getQuantity() <= 0)
+        {
+            $this->remove($rowId);
+        }
+
+        // update discounts on priceRules collection
+        $this->updateCartPercentageDiscounts();
+    }
+
+    /**
+     * Set shipping
+     *
+     * @return array
+     */
+    public function setShipping($shipping)
+    {
+        $this->shipping = $shipping;
+    }
+
+
+    //*****************
+    // Methods
+    //*****************
 
     /**
      * Set cart instance in session
@@ -115,16 +382,6 @@ class Cart
         event('cart.destroyed');
 
         return $response;
-    }
-
-    /**
-     * Get the cart items
-     *
-     * @return \Syscover\ShoppingCart\CartItems
-     */
-    public function getCartItems()
-    {
-        return $this->cartItems;
     }
 
     /**
@@ -220,228 +477,14 @@ class Cart
         }
     }
 
-   /**
-    * Check if cart has products to shipping
-    *
-    * @return boolean | void
-    */
-	public function hasShipping()
-	{
-		return $this->hasShipping;
-	}
-
     /**
-     * magic method to make accessing the total, tax and subtotal properties
+     * Check if cart has products to shipping
      *
-     * @param   string $attribute
-     * @return  float|null
+     * @return boolean | void
      */
-    public function __get($attribute)
+    public function hasShipping()
     {
-        if($attribute === 'total') {
-            $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($total, Item $item) {
-                return $total + $item->total;
-            }, 0);
-        }
-
-        if($attribute === 'taxAmount') {
-            $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($taxAmount, Item $item) {
-                return $taxAmount + $item->taxAmount;
-            }, 0);
-        }
-
-        if($attribute === 'subtotal')
-        {
-            $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($subTotal, Item $item) {
-                return $subTotal + $item->subtotal;
-            }, 0);
-        }
-
-        if($attribute === 'discountSubtotalPercentageAmount')
-        {
-            $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($discountSubtotalPercentageAmount, Item $item) {
-                return $discountSubtotalPercentageAmount + $item->discountSubtotalPercentageAmount;
-            }, 0);
-        }
-
-        if($attribute === 'discountTotalPercentageAmount')
-        {
-            $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($discountTotalPercentageAmount, Item $item) {
-                return $discountTotalPercentageAmount + $item->discountTotalPercentageAmount;
-            }, 0);
-        }
-
-        if($attribute === 'discountSubtotalAmount')
-        {
-            $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($discountSubtotalAmount, Item $item) {
-                return $discountSubtotalAmount + $item->discountSubtotalPercentageAmount + $item->discountSubtotalFixedAmount;
-            }, 0);
-        }
-
-        if($attribute === 'discountTotalAmount')
-        {
-            $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($discountTotalAmount, Item $item) {
-                return $discountTotalAmount + $item->discountTotalPercentageAmount + $item->discountTotalFixedAmount;
-            }, 0);
-        }
-
-        if($attribute === 'discountAmount')
-        {
-            return $this->discountSubtotalAmount + $this->discountTotalAmount;
-        }
-
-        return null;
-    }
-
-    /**
-     * Get the subtotal formated of the items in the cart.
-     *
-     * @param   int     $decimals
-     * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
-     * @return  float
-     */
-    public function getSubtotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
-    {
-        return number_format($this->subtotal, $decimals, $decimalPoint, $thousandSeperator);
-    }
-
-    /**
-     * Get the taxAmount formated of the items in the cart.
-     *
-     * @param   int     $decimals
-     * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
-     * @return  float
-     */
-    public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
-    {
-        return number_format($this->taxAmount, $decimals, $decimalPoint, $thousandSeperator);
-    }
-
-    /**
-     * Get the subtotal formated of the items in the cart.
-     *
-     * @param   int     $decimals
-     * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
-     * @return  float
-     */
-    public function getTotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
-    {
-        return number_format($this->total, $decimals, $decimalPoint, $thousandSeperator);
-    }
-
-    /**
-     * Get the discount amount formated from all items in the cart.
-     *
-     * @param   int     $decimals
-     * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
-     * @return  float
-     */
-    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
-    {
-        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeperator);
-    }
-
-    /**
-     * Get the number of items in the cart
-     *
-     * @return float
-     */
-    public function getQuantity()
-    {
-        return $this->cartItems->reduce(function($quantity, $item){
-            return $quantity += $item->getQuantity();
-        }, 0);
-    }
-
-    /**
-     * Set the number of items of a item cart
-     *
-     * @param int|string    $rowId
-     * @param int|float     $quantity
-     */
-    public function setQuantity($rowId, $quantity)
-    {
-        $this->cartItems->get($rowId)->setQuantity($quantity);
-
-        // if quantity is less than zere, remove item
-        if ($this->cartItems->get($rowId)->getQuantity() <= 0)
-        {
-            $this->remove($rowId);
-        }
-
-        // update discounts on priceRules collection
-        $this->updateCartPercentageDiscounts();
-    }
-
-    /**
-     * Get Collection with tax rules objects
-     *
-     * @return \Syscover\ShoppingCart\CartItemTaxRules
-     */
-    public function getTaxRules()
-    {
-        $taxRules = new CartItemTaxRules();
-
-        foreach ($this->cartItems as $cartItem)
-        {
-            foreach ($cartItem->taxRules as $taxRule)
-            {
-                if($taxRules->has($taxRule->id))
-                {
-                    // if find any tax with the same ID, sum yours rates
-                    $taxRules->get($taxRule->id)->taxAmount += $taxRule->taxAmount;
-                }
-                else
-                {
-                    // add new tax rule, clone object because otherwise object save reference with taxRule from carItem
-                    // everytime that we change taxAmount it would be changed in cartItem
-                    $taxRules->put($taxRule->id, clone $taxRule);
-                }
-            }
-        }
-
-        return $taxRules;
-    }
-
-    /**
-     * Get Array with price rules objects
-     *
-     * @return \Syscover\ShoppingCart\CartPriceRules
-     */
-    public function getPriceRules()
-    {
-        return $this->cartPriceRules;
-    }
-
-    /**
-     * Get shipping data
-     *
-     * @return array
-     */
-    public function getShipping()
-    {
-        return $this->shipping;
-    }
-
-    /**
-     * Set shipping
-     *
-     * @return array
-     */
-    public function setShipping($shipping)
-    {
-        $this->shipping = $shipping;
+        return $this->hasShipping;
     }
 
     /**
@@ -702,70 +745,9 @@ class Cart
     }
 
 
-    ////////////////////////////////////////////////////
-    // SHIPPING
-    ////////////////////////////////////////////////////
 
 
 // README
-//You have setShippingAmount to set amount shipping of all cart
-//```
-//CartProvider::instance()->setShippingAmount();
-//```
-//
-//
-//You have getShippingAmount to get amount shipping of all cart
-//```
-//CartProvider::instance()->getShippingAmount();
-//```
-
-//
-//
-//	/**
-//	 * return shipping amount
-//	 *
-//	 * @return integer
-//	 */
-//	public function getShippingAmount()
-//	{
-//		if(isset($this->shippingAmount))
-//			return $this->shippingAmount;
-//		else
-//			return 0;
-//	}
-//
-//	/**
-//	 * set shipping amount
-//	 *
-//	 * @return void
-//	 */
-//	public function setShippingAmount($shippingAmount)
-//	{
-//		$this->shippingAmount = $shippingAmount;
-//		$this->storeCartInstance();
-//	}
-//
-//
-//
-//	/**
-//	 * set cart has products to shipping
-//	 *
-//	 * @param  boolean		$shipping
-//	 * @throws ShoppingcartInvalidDataTypeException
-//	 */
-//	public function setShipping($shipping)
-//	{
-//		if(is_bool($shipping))
-//		{
-//			$this->shipping = $shipping;
-//			$this->storeCartInstance();
-//		}
-//		else
-//		{
-//			throw new ShoppingcartInvalidDataTypeException;
-//		}
-//	}
-//
 //
 //	/**
 //	 * get rule not combinable from cart, there can only be one

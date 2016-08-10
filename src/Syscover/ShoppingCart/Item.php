@@ -184,6 +184,10 @@ class Item implements Arrayable
         $this->setQuantity($quantity);
     }
 
+    //*****************
+    // Getters
+    //*****************
+
     /**
      * magic method to make accessing the total, tax and subtotal properties
      *
@@ -390,24 +394,6 @@ class Item implements Arrayable
     }
 
     /**
-     * Set the quantity for this cart item.
-     *
-     * @param   int|float $quantity
-     * @return  \Syscover\ShoppingCart\Item
-     */
-    public function setQuantity($quantity)
-    {
-        if($quantity !== 0 && (empty($quantity) || ! is_numeric($quantity)))
-            throw new \InvalidArgumentException('Please supply a valid quantity.');
-
-        $this->quantity = $quantity;
-
-        $this->calculateAmounts();
-
-        return $this;
-    }
-
-    /**
      * Get format discountSubtotalPercentage over this cart item.
      *
      * @param   int     $decimals
@@ -431,6 +417,29 @@ class Item implements Arrayable
     public function getDiscountTotalPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
     {
         return number_format($this->discountTotalPercentage, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+
+    //*****************
+    // Setters
+    //*****************
+
+    /**
+     * Set the quantity for this cart item.
+     *
+     * @param   int|float $quantity
+     * @return  \Syscover\ShoppingCart\Item
+     */
+    public function setQuantity($quantity)
+    {
+        if($quantity !== 0 && (empty($quantity) || ! is_numeric($quantity)))
+            throw new \InvalidArgumentException('Please supply a valid quantity.');
+
+        $this->quantity = $quantity;
+
+        $this->calculateAmounts();
+
+        return $this;
     }
 
     /**
@@ -514,6 +523,12 @@ class Item implements Arrayable
 
         return $this;
     }
+
+
+
+    //*****************
+    // Methods
+    //*****************
 
     /**
      * Calculate all amounts, this function is called, when change any property from cartItem
