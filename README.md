@@ -241,6 +241,12 @@ CartProvider::instance()->getTotal();
 ```
 
 
+To know if cart contain any item to shipping, you have method
+```
+CartProvider::instance()->hasShipping();
+```
+
+
 Get the number of items in the cart, total items
 ```
  CartProvider::instance()->getQuantity();
