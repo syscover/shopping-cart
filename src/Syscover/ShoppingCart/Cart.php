@@ -72,6 +72,20 @@ class Cart
 	 */
 	protected $shippingAmount;
 
+    /**
+     * check if user require billing for this cart
+     *
+     * @var boolean
+     */
+    public $hasBilling;
+
+    /**
+     * data of billing
+     *
+     * @var array
+     */
+    private $billing;
+
 
 	/**
 	 * Cart constructor.
@@ -91,7 +105,7 @@ class Cart
     //*****************
 
     /**
-     * Magic method to make accessing private attributes
+     * Magic method to access private attributes
      *
      * @param   string $attribute
      * @return  float|null
@@ -319,6 +333,16 @@ class Cart
         return $this->shipping;
     }
 
+    /**
+     * Get billing data
+     *
+     * @return array
+     */
+    public function getBilling()
+    {
+        return $this->billing;
+    }
+
 
     //*****************
     // Setters
@@ -367,6 +391,16 @@ class Cart
     public function setShipping($shipping)
     {
         $this->shipping = $shipping;
+    }
+
+    /**
+     * Set billing
+     *
+     * @return array
+     */
+    public function setBilling($billing)
+    {
+        $this->billing = $billing;
     }
 
 
