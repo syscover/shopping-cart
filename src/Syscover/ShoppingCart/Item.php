@@ -121,7 +121,7 @@ class Item implements Arrayable
      *
      * @var float
      */
-    private $discountSubtotalFixedAmount ;
+    private $discountSubtotalFixedAmount;
 
     /**
      * Discount amount if discount type is DISCOUNT_TOTAL_FIXED_AMOUNT
