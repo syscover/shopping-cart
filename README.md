@@ -241,6 +241,21 @@ CartProvider::instance()->getTotal();
 ```
 
 
+To set shipping amount
+```
+CartProvider::instance()->shippingAmount = 10.00;
+```
+
+
+To get shipping amount
+```
+CartProvider::instance()->shippingAmount;
+
+// or shipping amount formatted
+CartProvider::instance()->getShippingAmount();
+```
+
+
 To know if cart contain any item to shipping, you have method
 ```
 CartProvider::instance()->hasShipping();
