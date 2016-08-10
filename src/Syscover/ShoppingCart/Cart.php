@@ -159,6 +159,8 @@ class Cart
         // update discounts on priceRules collection
         $this->updateCartPercentageDiscounts();
 
+        $this->checkHasShipping();
+
         event('cart.added', $cartItem);
 
         if(! session()->has($this->instance))
@@ -182,6 +184,8 @@ class Cart
 
         // update discounts on priceRules collection
         $this->updateCartPercentageDiscounts();
+
+        $this->checkHasShipping();
     }
 
     /**
@@ -211,8 +215,20 @@ class Cart
         {
             // update discounts on priceRules collection
             $this->updateCartPercentageDiscounts();
+
+            $this->checkHasShipping();
         }
     }
+
+   /**
+    * Check if cart has products to shipping
+    *
+    * @return boolean | void
+    */
+	public function hasShipping()
+	{
+		return $this->hasShipping;
+	}
 
     /**
      * magic method to make accessing the total, tax and subtotal properties
@@ -670,6 +686,21 @@ class Cart
         }
     }
 
+    /**
+     * Check if cart contain any transportable item
+     *
+     * @return void
+     */
+    private function checkHasShipping()
+    {
+        foreach($this->cartItems as $item)
+        {
+            if($item->transportable === true)
+                $this->hasShipping = true;
+                break;
+        }
+    }
+
 
     ////////////////////////////////////////////////////
     // SHIPPING
@@ -677,18 +708,6 @@ class Cart
 
 
 // README
-//If you want to check, if this cart has shipping, you can use this method
-//```
-//CartProvider::instance()->hasShipping();
-//```
-//
-//
-//If you want set shipping with true or false, you can use this method setShipping and pass boolean parameter
-//```
-//CartProvider::instance()->setShipping(true);
-//```
-//
-//
 //You have setShippingAmount to set amount shipping of all cart
 //```
 //CartProvider::instance()->setShippingAmount();
@@ -726,15 +745,7 @@ class Cart
 //		$this->storeCartInstance();
 //	}
 //
-//	/**
-//	 * check if cart has products to shipping
-//	 *
-//	 * @return boolean | void
-//	 */
-//	public function hasShipping()
-//	{
-//		return $this->shipping;
-//	}
+//
 //
 //	/**
 //	 * set cart has products to shipping
