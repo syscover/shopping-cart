@@ -1,7 +1,7 @@
 {
-    "name": "syscover/shoppingcart",
-    "description": "ShoppingCart package",
-    "keywords": ["syscover","pulsar","laravel","Shoppingcart","Shopping Cart"],
+    "name": "syscover/shopping-cart",
+    "description": "Shopping Cart package",
+    "keywords": ["syscover","pulsar","laravel","shoppingcart","shopping", "cart"],
     "authors": [
         {
             "name": "SYSCOVER SL",
