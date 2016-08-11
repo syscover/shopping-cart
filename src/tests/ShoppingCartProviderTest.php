@@ -9,7 +9,7 @@ require_once __DIR__ . '/shopping_cart_tests_helpers/SessionMock.php';
 require_once __DIR__ . '/shopping_cart_tests_helpers/ProductModelStub.php';
 require_once __DIR__ . '/shopping_cart_tests_helpers/NamespacedProductModelStub.php';
 
-class CartProviderTest extends TestCase
+class ShoppingCartProviderTest extends TestCase
 {
     public function testCartCanAdd()
     {

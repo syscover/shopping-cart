@@ -31,12 +31,12 @@ Syscover\ShoppingCart\ShoppingCartServiceProvider::class,
 
 publish testing files
 ```
-php artisan vendor:publish --provider="Syscover\ShoppingCart\ShoppingcartServiceProvider"
+php artisan vendor:publish --provider="Syscover\ShoppingCart\ShoppingCartServiceProvider"
 ```
 
 and run the test using the following command:
 ```
-phpunit tests/CartProviderTest
+phpunit tests/ShoppingCartProviderTest
 ```
 
 
