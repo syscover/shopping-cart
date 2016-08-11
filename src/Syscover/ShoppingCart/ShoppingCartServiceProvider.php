@@ -18,7 +18,7 @@ class ShoppingCartServiceProvider extends ServiceProvider
 
         // register config files
         $this->publishes([
-            __DIR__ . '/../../config/shoppingcart.php' => config_path('shoppingcart.php')
+            __DIR__ . '/../../config/shoppingCart.php' => config_path('shoppingCart.php')
         ]);
 	}
 

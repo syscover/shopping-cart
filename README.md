@@ -84,7 +84,7 @@ TAX_SHIPPING_DISPLAY_PRICES=1
 ```
 
 
-##The shoppingcart gives you the following methods to use:
+##The Item Cart gives you the following methods to use:
 
 To add items we have create a Item object with this properties:
 * id:string = Id of product

@@ -242,9 +242,9 @@ class Item implements Arrayable
 
         if($attribute === 'price')
         {
-            if(config('shoppingcart.taxProductDisplayPrices') == Cart::PRICE_WITHOUT_TAX)
+            if(config('shoppingCart.taxProductDisplayPrices') == Cart::PRICE_WITHOUT_TAX)
                 return $this->unitPrice;
-            elseif(config('shoppingcart.taxProductDisplayPrices') == Cart::PRICE_WITH_TAX)
+            elseif(config('shoppingCart.taxProductDisplayPrices') == Cart::PRICE_WITH_TAX)
                 return $this->calculateUnitPriceWithTax($this->unitPrice);
         }
 
@@ -547,7 +547,7 @@ class Item implements Arrayable
     public function calculateAmounts($mode = null)
     {
         // subtotal calculate
-        if(($mode == Cart::PRICE_WITHOUT_TAX) || ($mode == null && config('shoppingcart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX || $this->taxRules === null || $this->taxRules->count() == 0))
+        if(($mode == Cart::PRICE_WITHOUT_TAX) || ($mode == null && config('shoppingCart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX || $this->taxRules === null || $this->taxRules->count() == 0))
         {
             if(! isset($this->unitPrice))
                 $this->unitPrice = $this->inputPrice;
@@ -582,7 +582,7 @@ class Item implements Arrayable
             $this->applyDiscountsPercentage();
         }
 
-        elseif(($mode == Cart::PRICE_WITH_TAX) || ($mode == null && config('shoppingcart.taxProductPrices') == Cart::PRICE_WITH_TAX))
+        elseif(($mode == Cart::PRICE_WITH_TAX) || ($mode == null && config('shoppingCart.taxProductPrices') == Cart::PRICE_WITH_TAX))
         {
             // total calculate
             $this->total = $this->quantity * $this->inputPrice;
