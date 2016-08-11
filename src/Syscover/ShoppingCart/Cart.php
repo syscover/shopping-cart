@@ -73,18 +73,11 @@ class Cart
 	protected $shippingAmount;
 
     /**
-     * check if user require billing for this cart
-     *
-     * @var boolean
-     */
-    public $hasBilling;
-
-    /**
-     * data of billing
+     * data of invoice
      *
      * @var array
      */
-    private $billing;
+    private $invoice;
 
 
 	/**
@@ -99,6 +92,34 @@ class Cart
 		$this->cartPriceRules 		            = new CartPriceRules();
         $this->hasCartPriceRuleNotCombinable 	= false;
 	}
+
+    //*****************
+    // Checks
+    //*****************
+
+    /**
+     * Check if cart has products to shipping
+     *
+     * @return boolean | void
+     */
+    public function hasShipping()
+    {
+        return $this->hasShipping;
+    }
+
+    /**
+     * Check if cart has invoice
+     *
+     * @return boolean | void
+     */
+    public function hasInvoice()
+    {
+        if(is_array($this->invoice) && count($this->invoice) > 0)
+            return true;
+        else
+            return false;
+    }
+
 
     //*****************
     // Getters
@@ -334,13 +355,13 @@ class Cart
     }
 
     /**
-     * Get billing data
+     * Get invoice data
      *
      * @return array
      */
-    public function getBilling()
+    public function getInvoice()
     {
-        return $this->billing;
+        return $this->invoice;
     }
 
 
@@ -386,7 +407,8 @@ class Cart
     /**
      * Set shipping
      *
-     * @return array
+     * @param   array   $shipping
+     * @return  void
      */
     public function setShipping($shipping)
     {
@@ -394,13 +416,14 @@ class Cart
     }
 
     /**
-     * Set billing
+     * Set invoice
      *
-     * @return array
+     * @param   array   $invoice
+     * @return  void
      */
-    public function setBilling($billing)
+    public function setInvoice($invoice)
     {
-        $this->billing = $billing;
+        $this->invoice = $invoice;
     }
 
 
@@ -527,16 +550,6 @@ class Cart
 
             $this->checkHasShipping();
         }
-    }
-
-    /**
-     * Check if cart has products to shipping
-     *
-     * @return boolean | void
-     */
-    public function hasShipping()
-    {
-        return $this->hasShipping;
     }
 
     /**
