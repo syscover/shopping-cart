@@ -100,11 +100,21 @@ class Cart
     /**
      * Check if cart has products to shipping
      *
-     * @return boolean | void
+     * @return boolean
      */
     public function hasShipping()
     {
         return $this->hasShipping;
+    }
+
+    /**
+     * Check if cart has free shipping
+     *
+     * @return boolean
+     */
+    public function hasFreeShipping()
+    {
+        return $this->hasFreeShipping;
     }
 
     /**
