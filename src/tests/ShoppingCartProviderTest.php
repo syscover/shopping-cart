@@ -240,6 +240,53 @@ class ShoppingCartProviderTest extends TestCase
         }
     }
 
+    public function testCartCanAddVariousProducts()
+    {
+        $this->expectsEvents('cart.added');
+
+        CartProvider::instance()->add(new Item('294ad', 'Product 1', 1, 100, 1.000, true, [
+            new TaxRule('IVA', 21.00, 0, 0)
+        ]));
+        CartProvider::instance()->add(new Item('295ad', 'Product 2', 1, 107.69, 1.000, true, [
+            new TaxRule('IVA', 21.00, 0, 0)
+        ]));
+
+        $this->assertEquals(2, CartProvider::instance()->getCartItems()->count());
+
+        if(config('shoppingCart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX)
+        {
+
+        }
+        if(config('shoppingCart.taxProductPrices') == Cart::PRICE_WITH_TAX)
+        {
+            $this->assertEquals('171,64', CartProvider::instance()->getSubtotal());
+            $this->assertEquals('36,05', CartProvider::instance()->getTaxAmount());
+            $this->assertEquals('0,00', CartProvider::instance()->getDiscountAmount());
+            $this->assertEquals('207,69', CartProvider::instance()->getTotal());
+        }
+
+        $this->expectsEvents('cart.added');
+
+        CartProvider::instance()->add(new Item('294ad', 'Product 1', 1, 100, 1.000, true, [
+            new TaxRule('IVA', 21.00, 0, 0)
+        ]));
+        CartProvider::instance()->add(new Item('295ad', 'Product 2', 1, 107.69, 1.000, true, [
+            new TaxRule('IVA', 21.00, 0, 0)
+        ]));
+
+        if(config('shoppingCart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX)
+        {
+
+        }
+        if(config('shoppingCart.taxProductPrices') == Cart::PRICE_WITH_TAX)
+        {
+            $this->assertEquals('343,29', CartProvider::instance()->getSubtotal());
+            $this->assertEquals('72,09', CartProvider::instance()->getTaxAmount());
+            $this->assertEquals('0,00', CartProvider::instance()->getDiscountAmount());
+            $this->assertEquals('415,38', CartProvider::instance()->getTotal());
+        }
+    }
+
     public function testCartCanAddMultiple()
     {
         $this->expectsEvents('cart.added');
