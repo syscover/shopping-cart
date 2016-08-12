@@ -140,7 +140,7 @@ class Item implements Arrayable
      * @param float                                 $quantity
      * @param float                                 $inputPrice
      * @param boolean                               $transportable
-     * @param float                                 $weight
+     * @param float|null                            $weight
      * @param array|\Syscover\ShoppingCart\TaxRule  $taxRule
      * @param array                                 $options
      */
