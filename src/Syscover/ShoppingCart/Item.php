@@ -158,6 +158,9 @@ class Item implements Arrayable
         if(! is_bool($transportable))
             throw new \InvalidArgumentException('Please supply a valid transportable.');
 
+        if($weight === null)
+            $weight = 0;
+
         if(strlen($weight) < 0 || ! is_numeric($weight))
             throw new \InvalidArgumentException('Please supply a valid weight.');
 
