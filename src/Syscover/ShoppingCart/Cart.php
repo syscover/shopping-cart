@@ -45,9 +45,16 @@ class Cart
     protected $hasCartPriceRuleNotCombinable;
 
     /**
-     * check if cart has shipping products
+     * check if cart has item transportable
      *
      * @var boolean
+     */
+    protected $hasItemTransportable;
+
+    /**
+     * check if cart has item has shipping
+     *
+     * @var array
      */
     protected $hasShipping;
 
@@ -56,7 +63,7 @@ class Cart
      *
      * @var array
      */
-    private $shipping;
+    protected $shipping;
 
     /**
      * check if cart has free shipping
@@ -77,7 +84,7 @@ class Cart
      *
      * @var array
      */
-    private $invoice;
+    protected $invoice;
 
 
 	/**
@@ -102,8 +109,22 @@ class Cart
      *
      * @return boolean
      */
-    public function hasShipping()
+    public function hasItemTransportable()
     {
+        return $this->hasItemTransportable;
+    }
+
+    /**
+     * Check if cart has shipping
+     *
+     * @param   boolean|null    $value
+     * @return  boolean
+     */
+    public function hasShipping($value = null)
+    {
+        if($value !== null)
+            $this->hasShipping = $value;
+
         return $this->hasShipping;
     }
 
@@ -502,7 +523,7 @@ class Cart
         // update discounts on priceRules collection
         $this->updateCartPercentageDiscounts();
 
-        $this->checkHasShipping();
+        $this->checkHasItemTransportable();
 
         event('cart.added', $cartItem);
 
@@ -528,7 +549,7 @@ class Cart
         // update discounts on priceRules collection
         $this->updateCartPercentageDiscounts();
 
-        $this->checkHasShipping();
+        $this->checkHasItemTransportable();
     }
 
     /**
@@ -559,7 +580,7 @@ class Cart
             // update discounts on priceRules collection
             $this->updateCartPercentageDiscounts();
 
-            $this->checkHasShipping();
+            $this->checkHasItemTransportable();
         }
     }
 
@@ -811,13 +832,13 @@ class Cart
      *
      * @return void
      */
-    private function checkHasShipping()
+    private function checkHasItemTransportable()
     {
         foreach($this->cartItems as $item)
         {
             if($item->transportable === true)
             {
-                $this->hasShipping = true;
+                $this->hasItemTransportable = true;
                 break;
             }
         }
