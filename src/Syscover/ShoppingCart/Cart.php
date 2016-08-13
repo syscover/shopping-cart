@@ -151,6 +151,16 @@ class Cart
             return false;
     }
 
+    /**
+     * Check if cart has any catPriceRule not combinable
+     *
+     * @return bool
+     */
+    public function hasCartPriceRuleNotCombinable()
+    {
+        return $this->hasCartPriceRuleNotCombinable;
+    }
+
 
     //*****************
     // Getters
@@ -373,6 +383,16 @@ class Cart
     public function getPriceRules()
     {
         return $this->cartPriceRules;
+    }
+
+    /**
+     * Get Array with price rules objects
+     *
+     * @return \Syscover\ShoppingCart\CartPriceRules
+     */
+    public function getCartPriceRuleNotCombinable()
+    {
+        return $this->cartPriceRules->where('combinable', false);
     }
 
     /**
