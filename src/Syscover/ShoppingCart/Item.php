@@ -107,28 +107,28 @@ class Item implements Arrayable
      *
      * @var int|float
      */
-    private $discountSubtotalPercentage;
+    protected $discountSubtotalPercentage;
 
     /**
      * Discount percentage over total from this item.
      *
      * @var int|float
      */
-    private $discountTotalPercentage;
+    protected $discountTotalPercentage;
 
     /**
      * Discount amount if discount type is DISCOUNT_SUBTOTAL_FIXED_AMOUNT
      *
      * @var float
      */
-    private $discountSubtotalFixedAmount;
+    protected $discountSubtotalFixedAmount;
 
     /**
      * Discount amount if discount type is DISCOUNT_TOTAL_FIXED_AMOUNT
      *
      * @var float
      */
-    private $discountTotalFixedAmount;
+    protected $discountTotalFixedAmount;
 
 
     /**
@@ -594,8 +594,7 @@ class Item implements Arrayable
             if(! isset($this->unitPrice))
             {
                 // calculate unit price without tax
-                $this->unitPrice    = $this->calculateSubtotalAndTaxOverTotal($this->inputPrice);
-                $isCalculateTax     = true;
+                $this->unitPrice    = $this->calculateUnitPriceOverPriceWithTax($this->inputPrice);
             }
 
             // subtotal is the amount without any discount
@@ -623,9 +622,12 @@ class Item implements Arrayable
                 $isCalculateTax = true;
             }
 
-            //  if tax don't have been calculated
+            //  if tax haven't been calculated before, calculate it now
             if(! $isCalculateTax)
-                $this->calculateTaxOverSubtotal($this->subtotalWithDiscounts);
+            {
+                $this->calculateTaxAmountOverSubtotal($this->subtotalWithDiscounts);
+            }
+
 
             // when we have subtotal, subtotalWithDiscounts and total amount, calculate percentage discounts
             $this->applyDiscountsPercentage();
@@ -637,7 +639,7 @@ class Item implements Arrayable
      *
      * @return void
      */
-    private function applyDiscountsPercentage()
+    protected function applyDiscountsPercentage()
     {
         // calculate if there are subtotal percentage discount
         if($this->discountTotalPercentage->count() > 0)
@@ -686,9 +688,9 @@ class Item implements Arrayable
      * @param   float   $subtotal
      * @return  float
      */
-    private function calculateTotalAndTaxOverSubtotal($subtotal)
+    protected function calculateTotalAndTaxOverSubtotal($subtotal)
     {
-        $this->calculateTaxOverSubtotal($subtotal);
+        $this->calculateTaxAmountOverSubtotal($subtotal);
 
         // return total
         return $subtotal + $this->taxRules->sum('taxAmount');
@@ -700,42 +702,12 @@ class Item implements Arrayable
      * @param   float   $total
      * @return  float
      */
-    private function calculateSubtotalAndTaxOverTotal($total)
+    protected function calculateSubtotalAndTaxOverTotal($total)
     {
-        $this->calculateTaxOverTotal($total);
+        $this->calculateTaxAmountOverTotal($total);
 
         // return subtotal
         return $this->total - $this->taxRules->sum('taxAmount');
-    }
-
-    /**
-     * Calculate unit price with tax, does not account for discounts.
-     * it is to calculate the result of the function getPrice if display prices are with tax
-     *
-     * @param   float   $unitPrice
-     * @return  float
-     */
-    private function calculateUnitPriceWithTax($unitPrice)
-    {
-        // calculate amounts of each taxRule
-        $taxRules       = $this->taxRules->sortBy('priority');
-        $lastPriority   = null;
-        $unitPriceAux   = $unitPrice;
-        $taxAmount      = 0;
-
-        foreach ($taxRules as $taxRule)
-        {
-            if($lastPriority == null || $lastPriority != $taxRule->priority)
-            {
-                // if is a different priority, calculate tax over subtotal plus previous tax amounts
-                $lastPriority   = $taxRule->priority;
-                $unitPriceAux  += $taxAmount;
-            }
-            $taxAmount += $unitPriceAux * ($taxRule->taxRate / 100);
-        }
-
-        // return priceunit + total
-        return $unitPrice + $taxAmount;
     }
 
     /**
@@ -744,7 +716,7 @@ class Item implements Arrayable
      * @param   $subtotal
      * @return  void
      */
-    private function calculateTaxOverSubtotal($subtotal)
+    protected function calculateTaxAmountOverSubtotal($subtotal)
     {
         // when calculate amounts, also you calculate tax,
         // to do this operation and don't sum old values, you need reset amounts values from
@@ -774,7 +746,7 @@ class Item implements Arrayable
      * @param   $total
      * @return  void
      */
-    private function calculateTaxOverTotal($total)
+    protected function calculateTaxAmountOverTotal($total)
     {
         // when calculate amounts, also you calculate tax,
         // to do this operation and don't sum old values, you need reset amounts values from
@@ -799,6 +771,62 @@ class Item implements Arrayable
     }
 
     /**
+     * Calculate unit price with tax, does not account discounts.
+     * it is to calculate the result of the function getPrice if display prices are with tax
+     *
+     * @param   float   $unitPrice
+     * @return  float
+     */
+    protected function calculateUnitPriceWithTax($unitPrice)
+    {
+        // calculate amounts of each taxRule
+        $taxRules       = $this->taxRules->sortBy('priority');
+        $lastPriority   = null;
+        $unitPriceAux   = $unitPrice;
+        $taxAmount      = 0;
+
+        foreach ($taxRules as $taxRule)
+        {
+            if($lastPriority == null || $lastPriority != $taxRule->priority)
+            {
+                // if is a different priority, calculate tax over subtotal plus previous tax amounts
+                $lastPriority   = $taxRule->priority;
+                $unitPriceAux  += $taxAmount;
+            }
+            $taxAmount += $unitPriceAux * ($taxRule->taxRate / 100);
+        }
+
+        return $unitPrice + $taxAmount;
+    }
+
+    /**
+     * Calculate unit price over price with tax
+     * @param   float   $priceWithTax
+     * @return  float
+     */
+    protected function calculateUnitPriceOverPriceWithTax($priceWithTax)
+    {
+        // calculate amounts of each taxRule
+        $taxRules           = $this->taxRules->sortByDesc('priority');  // sort taxRules desc direction to get subtotal
+        $lastPriority       = null;
+        $priceAuxWithTax    = $priceWithTax;
+        $taxAmount          = 0;
+
+        foreach ($taxRules as &$taxRule)
+        {
+            if($lastPriority === null || $lastPriority != $taxRule->priority)
+            {
+                // if is a different priority, calculate tax over subtotal plus previous tax amounts
+                $lastPriority       = $taxRule->priority;
+                $priceAuxWithTax    -= $taxAmount; // attention, reset tax amounts before sum
+            }
+            $taxAmount += ($priceAuxWithTax * $taxRule->taxRate) / ($taxRule->taxRate + 100);
+        }
+
+        return $priceWithTax - $taxAmount;
+    }
+
+    /**
      * Reset tax amount before calculate
      *
      * @return void
@@ -814,7 +842,7 @@ class Item implements Arrayable
      *
      * @return void
      */
-    private function resetTaxAmounts()
+    protected function resetTaxAmounts()
     {
         foreach ($this->taxRules as &$taxRule)
         {
