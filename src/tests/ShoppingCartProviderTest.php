@@ -32,13 +32,13 @@ class ShoppingCartProviderTest extends TestCase
         $this->expectsEvents('cart.added');
 
         CartProvider::instance()->add([
+            new Item('283ad', 'Product 2', 2, 10.00, 1.000),
             new Item('293ad', 'Product 1', 1, 9.99, 1.000),
-            new Item('283ad', 'Product 2', 3, 10.00, 1.000),
             new Item('244ad', 'Product 3', 2, 20.50, 1.000)
         ]);
 
         $this->assertEquals(3, CartProvider::instance()->getCartItems()->count());
-
+        $this->assertEquals(10.00, CartProvider::instance()->getCartItems()->first()->price);
     }
 
     public function testCartCanAddWithTaxRule()
@@ -50,6 +50,39 @@ class ShoppingCartProviderTest extends TestCase
         $this->assertEquals(1, CartProvider::instance()->getCartItems()->first()->taxRules->count());
         $this->assertEquals(21, CartProvider::instance()->getCartItems()->first()->taxRules->first()->taxRate);
         $this->assertEquals(['21'], CartProvider::instance()->getCartItems()->first()->getTaxRates());
+    }
+
+    public function testCartCanAddVariousWithTaxRules()
+    {
+        $this->expectsEvents('cart.added');
+
+        CartProvider::instance()->add(new Item('293ad', 'Product 1', 2, 100, 1.000, true, [
+            new TaxRule('IVA', 21.00, 0, 0),
+            new TaxRule('OTHER IVA', 10.00, 1, 1)
+        ]));
+
+        $this->assertEquals(2, CartProvider::instance()->getCartItems()->first()->taxRules->count());
+
+        if(config('shoppingCart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX)
+        {
+
+        }
+        elseif(config('shoppingCart.taxProductPrices') == Cart::PRICE_WITH_TAX)
+        {
+            $this->assertEquals('150,26', CartProvider::instance()->getCartItems()->first()->getSubtotal());
+            $this->assertEquals(150.262960180315559455266338773071765899658203125, CartProvider::instance()->getCartItems()->first()->subtotal);
+            //$this->assertEquals('24,87', CartProvider::instance()->getCartItems()->first()->getTaxAmount());
+            $this->assertEquals('200,00', CartProvider::instance()->getCartItems()->first()->getTotal());
+            $this->assertEquals(200, CartProvider::instance()->getCartItems()->first()->total);
+
+            $this->assertEquals('31,56', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxAmount());
+            $this->assertEquals('21', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->getTaxRate());
+            $this->assertEquals('IVA', CartProvider::instance()->getTaxRules()->get(md5('IVA' . '0'))->name);
+
+            $this->assertEquals('18,18', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxAmount());
+            $this->assertEquals('10', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->getTaxRate());
+            $this->assertEquals('OTHER IVA', CartProvider::instance()->getTaxRules()->get(md5('OTHER IVA' . '1'))->name);
+        }
     }
 
     public function testCartCanAddWithTaxRules()
