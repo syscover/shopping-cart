@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Collection;
 
-class CartItemOptions extends Collection
+class Options extends Collection
 {
     /**
      * Get the option by the given key.
