@@ -1,7 +1,5 @@
 <?php namespace Syscover\ShoppingCart;
 
-use Syscover\ShoppingCart\Discount;
-
 class PriceRule
 {
     const WITHOUT_DISCOUNT                  = 1;
@@ -66,6 +64,13 @@ class PriceRule
      */
     public $freeShipping;
 
+    /**
+     * The options for this price rule
+     *
+     * @var array
+     */
+    public $options;
+
 
     /**
      * PriceRule constructor.
@@ -78,14 +83,16 @@ class PriceRule
      * @param float     $maximumPercentageDiscountAmount
      * @param bool      $applyShippingAmount
      * @param bool      $freeShipping
+     * @param array     $options
      */
-    public function __construct($name, $description, $discountType, $freeShipping = false, $discountFixed = null, $discountPercentage = null, $maximumPercentageDiscountAmount = null, $applyShippingAmount = false, $combinable = true)
+    public function __construct($name, $description, $discountType, $freeShipping = false, $discountFixed = null, $discountPercentage = null, $maximumPercentageDiscountAmount = null, $applyShippingAmount = false, $combinable = true, array $options = [])
     {
         $this->name                     = $name;
         $this->description              = $description;
         $this->discountType             = $discountType;
         $this->combinable               = $combinable;
         $this->freeShipping             = $freeShipping;
+        $this->options                  = new Options($options);
         $this->id                       = $this->generateId();
 
         $this->discount = new Discount($this->id, $discountFixed, $discountPercentage, $maximumPercentageDiscountAmount, $applyShippingAmount);
