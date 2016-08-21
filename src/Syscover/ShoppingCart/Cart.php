@@ -528,7 +528,6 @@ class Cart
         // increment quantity if exist a product with de same rowId
         if($this->cartItems->has($cartItem->rowId))
         {
-
             $this->cartItems->get($cartItem->rowId)->setQuantity($cartItem->quantity + $this->cartItems->get($cartItem->rowId)->quantity);
         }
         else

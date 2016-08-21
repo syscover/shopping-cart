@@ -5,91 +5,91 @@ use Illuminate\Contracts\Support\Arrayable;
 class Item implements Arrayable
 {
     /**
-     * The rowID of the cart item.
+     * The rowID of the cart item
      *
      * @var string
      */
     public $rowId;
 
     /**
-     * The ID of the cart item.
+     * The ID of the cart item
      *
      * @var int|string
      */
     public $id;
 
     /**
-     * The name of the cart item.
+     * The name of the cart item
      *
      * @var string
      */
     public $name;
 
     /**
-     * The price per unit without tax.
+     * The price per unit without tax
      *
      * @var float
      */
     private $unitPrice;
 
     /**
-     * The input price when instance object.
+     * The input price when instance object
      *
      * @var float
      */
     private $inputPrice;
 
     /**
-     * set if product is transportable.
+     * set if product is transportable
      *
      * @var boolean
      */
     public $transportable;
 
     /**
-     * Weight or unit to calculate ahippiing amount.
+     * Weight or unit to calculate shipping amount
      *
      * @var int|float
      */
     public $weight;
 
     /**
-     * The tax rules for the cart item.
+     * The tax rules for the cart item
      *
      * @var \Syscover\ShoppingCart\CartItemTaxRules;
      */
     public $taxRules;
 
     /**
-     * The options for this cart item.
+     * The options for this cart item
      *
      * @var array
      */
     public $options;
 
     /**
-     * The quantity for this cart item.
+     * The quantity for this cart item
      *
      * @var int|float
      */
     private $quantity;
 
     /**
-     * Price multiplied by quantity.
+     * Price multiplied by quantity
      *
      * @var int|float
      */
     public $subtotal;
 
     /**
-     * Price multiplied by quantity less discounts.
+     * Price multiplied by quantity less discounts
      *
      * @var int|float
      */
     public $subtotalWithDiscounts;
 
     /**
-     * The quantity for this cart item.
+     * The quantity for this cart item
      *
      * @var int|float
      */
@@ -103,14 +103,14 @@ class Item implements Arrayable
     public $discountType;
 
     /**
-     * Discount percentage over subtotal from this item.
+     * Discount percentage over subtotal from this item
      *
      * @var int|float
      */
     protected $discountSubtotalPercentage;
 
     /**
-     * Discount percentage over total from this item.
+     * Discount percentage over total from this item
      *
      * @var int|float
      */
@@ -169,7 +169,7 @@ class Item implements Arrayable
         $this->inputPrice        = floatval($inputPrice);
         $this->transportable    = $transportable;
         $this->weight           = floatval($weight);
-        $this->options          = new CartItemOptions($options);
+        $this->options          = new Options($options);
         $this->taxRules         = new CartItemTaxRules();
         $this->rowId            = $this->generateRowId($id, $options);
 
