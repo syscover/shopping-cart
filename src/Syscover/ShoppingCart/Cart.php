@@ -56,14 +56,14 @@ class Cart
      *
      * @var array
      */
-    protected $hasShipping;
+    protected $hasShippingData;
 
     /**
-     * data of shipping
+     * data of shipping, address, country, etc.
      *
      * @var array
      */
-    protected $shipping;
+    protected $shippingData;
 
     /**
      * check if cart has free shipping
@@ -115,17 +115,27 @@ class Cart
     }
 
     /**
-     * Check if cart has shipping
+     * Check if cart has shipping data, with address to do the delivery
      *
-     * @param   boolean|null    $value
      * @return  boolean
      */
-    public function hasShipping($value = null)
+    public function hasShippingData()
     {
-        if($value !== null)
-            $this->hasShipping = $value;
-
-        return $this->hasShipping;
+        if(is_array($this->shippingData))
+        {
+            if(count($this->shippingData) > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
     }
 
     /**
@@ -400,9 +410,9 @@ class Cart
      *
      * @return array
      */
-    public function getShipping()
+    public function getShippingData()
     {
-        return $this->shipping;
+        return $this->shippingData;
     }
 
     /**
@@ -456,14 +466,14 @@ class Cart
     }
 
     /**
-     * Set shipping
+     * Set shipping data
      *
-     * @param   array   $shipping
+     * @param   array   $shippingData
      * @return  void
      */
-    public function setShipping($shipping)
+    public function setShippingData($shippingData)
     {
-        $this->shipping = $shipping;
+        $this->shippingData = $shippingData;
     }
 
     /**

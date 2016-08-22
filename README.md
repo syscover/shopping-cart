@@ -258,9 +258,9 @@ CartProvider::instance()->getShippingAmount();
 ```
 
 
-To know if cart contain any item to shipping, you have method
+To know if cart contain any item transportable, you have method
 ```
-CartProvider::instance()->hasShipping();
+CartProvider::instance()->hasItemTransportable();
 ```
 
 
