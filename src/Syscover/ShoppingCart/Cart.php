@@ -70,14 +70,14 @@ class Cart
      *
      * @var boolean
      */
-    protected $hasFreeShipping;
+    protected $hasFreeShipping = false;
 
 	/**
 	 * shipping amount
 	 *
 	 * @var double
 	 */
-	protected $shippingAmount;
+	protected $shippingAmount = 0;
 
     /**
      * data of invoice
@@ -190,10 +190,10 @@ class Cart
                 return $total + $item->total;
             }, 0);
 
-            if(! $this->hasFreeShipping())
-                return $totalCartItems + $this->shippingAmount;
+            if($this->hasFreeShipping())
+                return $totalCartItems;
 
-            return $totalCartItems;
+            return $totalCartItems + $this->shippingAmount;
         }
 
         if($attribute === 'taxAmount') {
