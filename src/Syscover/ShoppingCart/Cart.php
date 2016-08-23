@@ -189,11 +189,9 @@ class Cart
             $totalCartItems = $cartItems->reduce(function ($total, Item $item) {
                 return $total + $item->total;
             }, 0);
-            
+
             if(! $this->hasFreeShipping())
-            {
                 return $totalCartItems + $this->shippingAmount;
-            }
 
             return $totalCartItems;
         }
