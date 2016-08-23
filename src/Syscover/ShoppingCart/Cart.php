@@ -868,8 +868,9 @@ class Cart
             if($item->transportable === true)
             {
                 $this->hasItemTransportable = true;
-                break;
+                return;
             }
         }
+        $this->hasItemTransportable = false;
     }
 }
