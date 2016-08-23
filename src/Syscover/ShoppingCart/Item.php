@@ -103,32 +103,32 @@ class Item implements Arrayable
     public $discountType;
 
     /**
-     * Discount percentage over subtotal from this item
+     * Cart prices rules with discounts percentage over subtotal, your type is DISCOUNT_SUBTOTAL_PERCENTAGE
      *
-     * @var int|float
+     * @var CartItemDiscounts
      */
-    protected $discountSubtotalPercentage;
+    protected $discountsSubtotalPercentage;
 
     /**
-     * Discount percentage over total from this item
+     * Cart prices rules with discounts percentage over total, your type is DISCOUNT_TOTAL_PERCENTAGE
      *
-     * @var int|float
+     * @var CartItemDiscounts
      */
-    protected $discountTotalPercentage;
+    protected $discountsTotalPercentage;
 
     /**
-     * Discount amount if discount type is DISCOUNT_SUBTOTAL_FIXED_AMOUNT
+     * Cart prices rules with discounts fixed over subtotal, your type is DISCOUNT_SUBTOTAL_FIXED_AMOUNT
      *
-     * @var float
+     * @var CartItemDiscounts
      */
-    protected $discountSubtotalFixedAmount;
+    protected $discountsSubtotalFixed;
 
     /**
-     * Discount amount if discount type is DISCOUNT_TOTAL_FIXED_AMOUNT
+     * Cart prices rules with discounts fixed over total, your type is DISCOUNT_TOTAL_FIXED_AMOUNT
      *
-     * @var float
+     * @var CartItemDiscounts
      */
-    protected $discountTotalFixedAmount;
+    protected $discountsTotalFixed;
 
 
     /**
@@ -174,10 +174,10 @@ class Item implements Arrayable
         $this->rowId            = $this->generateRowId($id, $options);
 
         // set discounts
-        $this->discountSubtotalPercentage   = new CartItemDiscounts();
-        $this->discountTotalPercentage      = new CartItemDiscounts();
-        $this->discountSubtotalFixedAmount  = new CartItemDiscounts();
-        $this->discountTotalFixedAmount     = new CartItemDiscounts();
+        $this->discountsSubtotalPercentage  = new CartItemDiscounts();
+        $this->discountsTotalPercentage     = new CartItemDiscounts();
+        $this->discountsSubtotalFixed       = new CartItemDiscounts();
+        $this->discountsTotalFixed          = new CartItemDiscounts();
 
         // add tax rule to taxRules property
         $this->addTaxRule($taxRule);
@@ -195,38 +195,48 @@ class Item implements Arrayable
      * magic method to make accessing the total, tax and subtotal properties
      *
      * @param   string      $attribute
-     * @return  float|null
+     * @return  null|float|CartItemDiscounts
      */
     public function __get($attribute)
     {
+        if($attribute === 'discountsSubtotalPercentage')
+        {
+            return $this->discountsSubtotalPercentage;
+        }
+
+        if($attribute === 'discountsTotalPercentage')
+        {
+            return $this->discountsTotalPercentage;
+        }
+
         if($attribute === 'discountSubtotalPercentage')
         {
-            return $this->discountSubtotalPercentage;
+            return $this->discountsSubtotalPercentage->sum('percentage');
         }
 
         if($attribute === 'discountTotalPercentage')
         {
-            return $this->discountTotalPercentage;
+            return $this->discountsTotalPercentage->sum('percentage');
         }
 
         if($attribute === 'discountSubtotalPercentageAmount')
         {
-            return $this->discountSubtotalPercentage->sum('amount');
+            return $this->discountsSubtotalPercentage->sum('amount');
         }
 
         if($attribute === 'discountTotalPercentageAmount')
         {
-            return $this->discountTotalPercentage->sum('amount');
+            return $this->discountsTotalPercentage->sum('amount');
         }
 
         if($attribute === 'discountSubtotalFixedAmount')
         {
-            return $this->discountSubtotalFixedAmount->sum('amount');
+            return $this->discountsSubtotalFixed->sum('amount');
         }
 
         if($attribute === 'discountTotalFixedAmount')
         {
-            return $this->discountTotalFixedAmount->sum('amount');
+            return $this->discountsTotalFixed->sum('amount');
         }
 
         if($attribute === 'discountAmount')
@@ -234,8 +244,8 @@ class Item implements Arrayable
             return
                 $this->discountSubtotalPercentageAmount +
                 $this->discountTotalPercentageAmount +
-                $this->discountSubtotalFixedAmount->sum('amount') +
-                $this->discountTotalFixedAmount->sum('amount');
+                $this->discountSubtotalFixedAmount +
+                $this->discountTotalFixedAmount;
         }
 
         if($attribute === 'taxAmount')
@@ -392,7 +402,7 @@ class Item implements Arrayable
     }
 
     /**
-     * Get format discountSubtotalPercentage over this cart item.
+     * Get format discountsSubtotalPercentage over this cart item.
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
@@ -401,7 +411,7 @@ class Item implements Arrayable
      */
     public function getDiscountSubtotalPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
     {
-        return number_format($this->discountSubtotalPercentage->sum('percentage'), $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discountsSubtotalPercentage->sum('percentage'), $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
@@ -414,7 +424,7 @@ class Item implements Arrayable
      */
     public function getDiscountTotalPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
     {
-        return number_format($this->discountTotalPercentage, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discountsTotalPercentage->sum('percentage'), $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
@@ -464,11 +474,11 @@ class Item implements Arrayable
         if($discount->percentage !== 0 && (empty($discount->percentage) || ! is_numeric($discount->percentage)))
             throw new \InvalidArgumentException('Please supply a valid discount percentage.');
 
-        if($this->discountTotalPercentage->count() > 0)
+        if($this->discountsTotalPercentage->count() > 0)
             throw new \InvalidArgumentException('You can\'t apply discount over subtotal, when you already have discounts over total.');
 
         // add discount subtotal percentage
-        $this->discountSubtotalPercentage->put($discount->id, $discount);
+        $this->discountsSubtotalPercentage->put($discount->id, $discount);
 
         $this->calculateAmounts();
 
@@ -486,11 +496,11 @@ class Item implements Arrayable
         if($discount->percentage !== 0 && (empty($discount->percentage) || ! is_numeric($discount->percentage)))
             throw new \InvalidArgumentException('Please supply a valid discount percentage.');
 
-        if($this->discountSubtotalPercentage->count() > 0)
+        if($this->discountsSubtotalPercentage->count() > 0)
             throw new \InvalidArgumentException('You can\'t apply discount over total, when you already have discounts over subtotal.');
 
         // set discount total percentage
-        $this->discountTotalPercentage->put($discount->id, $discount);
+        $this->discountsTotalPercentage->put($discount->id, $discount);
 
         $this->calculateAmounts();
 
@@ -509,7 +519,7 @@ class Item implements Arrayable
             throw new \InvalidArgumentException('Please supply a valid discount percentage.');
 
         // set discount subtotal fixed amount
-        $this->discountSubtotalFixedAmount->put($discount->id, $discount);
+        $this->discountsSubtotalFixed->put($discount->id, $discount);
 
         $this->calculateAmounts();
 
@@ -528,7 +538,7 @@ class Item implements Arrayable
             throw new \InvalidArgumentException('Please supply a valid discount percentage.');
 
         // set discount total fixed amount
-        $this->discountTotalFixedAmount->put($discount->id, $discount);
+        $this->discountsTotalFixed->put($discount->id, $discount);
 
         $this->calculateAmounts();
 
@@ -560,20 +570,20 @@ class Item implements Arrayable
             $this->subtotal                 = $this->quantity * $this->unitPrice;
             $this->subtotalWithDiscounts    = $this->subtotal;
 
-            if($this->discountSubtotalFixedAmount->sum('fixed') > 0)
+            if($this->discountsSubtotalFixed->sum('fixed') > 0)
             {
                 // calculate subtotal including with discount fixed amount
-                $this->subtotalWithDiscounts = $this->subtotal - $this->discountSubtotalFixedAmount->sum('amount');
+                $this->subtotalWithDiscounts = $this->subtotal - $this->discountSubtotalFixedAmount;
             }
 
             // calculate all amounts for price without tax
             $this->total = $this->calculateTotalAndTaxOverSubtotal($this->subtotalWithDiscounts);
 
             // calculate discount total fixed amount
-            if($this->discountTotalFixedAmount->sum('fixed') > 0)
+            if($this->discountsTotalFixed->sum('fixed') > 0)
             {
                 // calculate total less discount fixed amount
-                $this->total -= $this->discountTotalFixedAmount->sum('amount');
+                $this->total -= $this->discountTotalFixedAmount;
 
                 $this->subtotalWithDiscounts = $this->calculateSubtotalAndTaxOverTotal($this->total);
             }
@@ -601,10 +611,10 @@ class Item implements Arrayable
             $this->subtotal                 = $this->quantity * $this->unitPrice;
             $this->subtotalWithDiscounts    = $this->subtotal;
 
-            if($this->discountTotalFixedAmount->sum('fixed') > 0)
+            if($this->discountsTotalFixed->sum('fixed') > 0)
             {
                 // calculate total including possible discount fixed amount
-                $this->total = $this->total - $this->discountTotalFixedAmount->sum('amount');
+                $this->total = $this->total - $this->discountTotalFixedAmount;
 
                 // calculate subtotal with total discounts
                 $this->subtotalWithDiscounts    = $this->calculateSubtotalAndTaxOverTotal($this->total);
@@ -613,10 +623,10 @@ class Item implements Arrayable
 
 
             // calculate discount subtotal fixed amount
-            if($this->discountSubtotalFixedAmount->sum('fixed') > 0)
+            if($this->discountsSubtotalFixed->sum('fixed') > 0)
             {
                 // calculate subtotal less discount fixed amount
-                $this->subtotalWithDiscounts -= $this->discountSubtotalFixedAmount->sum('amount');
+                $this->subtotalWithDiscounts -= $this->discountSubtotalFixedAmount;
 
                 $this->total    = $this->calculateTotalAndTaxOverSubtotal($this->subtotalWithDiscounts);
                 $isCalculateTax = true;
@@ -642,9 +652,9 @@ class Item implements Arrayable
     protected function applyDiscountsPercentage()
     {
         // calculate if there are subtotal percentage discount
-        if($this->discountTotalPercentage->count() > 0)
+        if($this->discountsTotalPercentage->count() > 0)
         {
-            $this->discountTotalPercentage->transform(function(Discount $discount, $key) {
+            $this->discountsTotalPercentage->transform(function(Discount $discount, $key) {
                 // calculate discount to apply
                 $discount->amount = ($this->total * $discount->percentage) / 100;
 
@@ -663,9 +673,9 @@ class Item implements Arrayable
         }
 
         // calculate if there are total percentage discount
-        if($this->discountSubtotalPercentage->count() > 0)
+        if($this->discountsSubtotalPercentage->count() > 0)
         {
-            $this->discountSubtotalPercentage->transform(function(Discount $discount, $key) {
+            $this->discountsSubtotalPercentage->transform(function(Discount $discount, $key) {
                 // calculate discount to apply
                 $discount->amount = ($this->subtotalWithDiscounts * $discount->percentage) / 100;
 

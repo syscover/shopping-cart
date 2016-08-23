@@ -206,7 +206,7 @@ class ShoppingCartProviderTest extends TestCase
             $this->assertEquals('75,13', CartProvider::instance()->getCartItems()->first()->getSubtotal());
             $this->assertEquals(75.1314800901577797276331693865358829498291015625, CartProvider::instance()->getCartItems()->first()->subtotal);
 
-            $this->assertEquals(10, CartProvider::instance()->getCartItems()->first()->discountSubtotalPercentage->sum('percentage'));
+            $this->assertEquals(10, CartProvider::instance()->getCartItems()->first()->discountsSubtotalPercentage->sum('percentage'));
             $this->assertEquals('10', CartProvider::instance()->getCartItems()->first()->getDiscountSubtotalPercentage());
             $this->assertEquals(7.51314800902, CartProvider::instance()->getCartItems()->first()->discountAmount);
             $this->assertEquals('7,51', CartProvider::instance()->getCartItems()->first()->getDiscountAmount());

@@ -833,7 +833,7 @@ class Cart
             {
                 // set discount amount to price rule for each cart item
                 $cartPriceRule->discountAmount = $this->cartItems->reduce(function ($discountAmount, Item $cartItem) use ($cartPriceRule){
-                    return $discountAmount + $cartItem->discountSubtotalPercentage->where('id', $cartPriceRule->id)->sum('amount');
+                    return $discountAmount + $cartItem->discountsSubtotalPercentage->where('id', $cartPriceRule->id)->sum('amount');
                 }, 0);
             }
 
@@ -842,7 +842,7 @@ class Cart
             {
                 // set discount amount to price rule for each cart item
                 $cartPriceRule->discountAmount = $this->cartItems->reduce(function ($discountAmount, Item $cartItem) use ($cartPriceRule){
-                    return $discountAmount + $cartItem->discountTotalPercentage->where('id', $cartPriceRule->id)->sum('amount');
+                    return $discountAmount + $cartItem->discountsTotalPercentage->where('id', $cartPriceRule->id)->sum('amount');
                 }, 0);
             }
 
