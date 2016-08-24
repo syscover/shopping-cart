@@ -268,7 +268,7 @@ class Item implements Arrayable
 
         if($attribute === 'totalWithoutDiscount')
         {
-            return $this->total - $this->discountAmount;
+            return $this->total + $this->discountAmount;
         }
 
         return null;
