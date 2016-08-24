@@ -266,6 +266,11 @@ class Item implements Arrayable
             return $this->quantity;
         }
 
+        if($attribute === 'totalWithoutDiscount')
+        {
+            return $this->total - $this->discountAmount;
+        }
+
         return null;
     }
 
@@ -386,6 +391,20 @@ class Item implements Arrayable
     public function getTotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
         return number_format($this->total, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Returns the formatted total without discount amount.
+     * Total is price for whole CartItem with TAX
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  string
+     */
+    public function getTotalWithoutDiscount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->totalWithoutDiscount, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
