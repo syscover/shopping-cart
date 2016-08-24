@@ -184,6 +184,9 @@ class Cart
      */
     public function __get($attribute)
     {
+        /**
+         *  Total from cart items plus shipping amount
+         */
         if($attribute === 'total') {
             $cartItems = $this->cartItems;
             $totalCartItems = $cartItems->reduce(function ($total, Item $item) {
@@ -194,6 +197,16 @@ class Cart
                 return $totalCartItems;
 
             return $totalCartItems + $this->shippingAmount;
+        }
+
+        /**
+         *  Total from cart items amount
+         */
+        if($attribute === 'cartItemsTotalAmount') {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($total, Item $item) {
+                return $total + $item->total;
+            }, 0);
         }
 
         if($attribute === 'taxAmount') {
@@ -310,7 +323,7 @@ class Cart
     }
 
     /**
-     * Get the subtotal formated of the items in the cart.
+     * Get the total formated of the items in the cart.
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
@@ -320,6 +333,19 @@ class Cart
     public function getTotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
         return number_format($this->total, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the cart items total amount formated of the items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getCartItemsTotalAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->cartItemsTotalAmount, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
