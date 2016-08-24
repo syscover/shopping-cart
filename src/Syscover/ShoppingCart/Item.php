@@ -638,7 +638,6 @@ class Item implements Arrayable
                 $this->calculateTaxAmountOverSubtotal($this->subtotalWithDiscounts);
             }
 
-
             // when we have subtotal, subtotalWithDiscounts and total amount, calculate percentage discounts
             $this->applyDiscountsPercentage();
         }

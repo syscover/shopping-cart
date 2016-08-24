@@ -756,8 +756,15 @@ class Cart
                         // set amount to discount is less or equal than subtotal
                         $priceRule->discount->amount = $discountAmount;
 
+                        // we clone discount to apply new amount
+                        $itemDiscount = clone $priceRule->discount;
+
+                        // as discount is greater than total,
+                        // amount will be deducted the total
+                        $itemDiscount->amount = $cartItem->subtotalWithDiscounts;
+
                         $cartItem->setDiscountSubtotalFixed(
-                            clone $priceRule->discount // add discount to cart item
+                            $itemDiscount
                         );
                     }
                 }
@@ -771,7 +778,8 @@ class Cart
         // set fixed discounts over total
         if($priceRule->discountType == PriceRule::DISCOUNT_TOTAL_FIXED_AMOUNT)
         {
-            // sorts cartItems from highest to lowest tax rate value and sorts lowest to highest total
+            // sorts cartItems from highest to lowest tax rate value
+            // and sorts lowest to highest total
             $cartItems = $this->cartItems->sortByDesc(function ($cartItem, $key) {
                 return $cartItem->taxRules->sum('taxRate');
             })->groupBy(function($cartItem, $key) {
@@ -807,8 +815,15 @@ class Cart
                         // set amount to discount is less or equal than total
                         $priceRule->discount->amount = $discountAmount;
 
+                        // we clone discount to apply new amount
+                        $itemDiscount = clone $priceRule->discount;
+
+                        // as discount is greater than total,
+                        // amount will be deducted the total
+                        $itemDiscount->amount = $cartItem->total;
+
                         $cartItem->setDiscountTotalFixed(
-                            clone $priceRule->discount
+                            $itemDiscount
                         );
                     }
                 }
