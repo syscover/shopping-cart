@@ -212,10 +212,10 @@ class Cart
         /**
          *  Total from cart items amount
          */
-        if($attribute === 'cartItemsTotalWithoutDiscount') {
+        if($attribute === 'cartItemsTotalWithoutDiscounts') {
             $cartItems = $this->cartItems;
-            return $cartItems->reduce(function ($totalWithoutDiscount, Item $item) {
-                return $totalWithoutDiscount + $item->totalWithoutDiscount;
+            return $cartItems->reduce(function ($totalWithoutDiscounts, Item $item) {
+                return $totalWithoutDiscounts + $item->totalWithoutDiscounts;
             }, 0);
         }
 
@@ -387,9 +387,9 @@ class Cart
      * @param   string  $thousandSeperator
      * @return  float
      */
-    public function getCartItemsTotalWithoutDiscount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getCartItemsTotalWithoutDiscounts($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
-        return number_format($this->cartItemsTotalWithoutDiscount, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->cartItemsTotalWithoutDiscounts, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**

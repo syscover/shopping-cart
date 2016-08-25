@@ -266,7 +266,7 @@ class Item implements Arrayable
             return $this->quantity;
         }
 
-        if($attribute === 'totalWithoutDiscount')
+        if($attribute === 'totalWithoutDiscounts')
         {
             return $this->total + $this->discountAmount;
         }
@@ -402,9 +402,9 @@ class Item implements Arrayable
      * @param   string  $thousandSeperator
      * @return  string
      */
-    public function getTotalWithoutDiscount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getTotalWithoutDiscounts($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
-        return number_format($this->totalWithoutDiscount, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->totalWithoutDiscounts, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
