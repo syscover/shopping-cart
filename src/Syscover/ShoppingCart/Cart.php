@@ -234,6 +234,14 @@ class Cart
             }, 0);
         }
 
+        if($attribute === 'subtotalWithDiscounts')
+        {
+            $cartItems = $this->cartItems;
+            return $cartItems->reduce(function ($subtotalWithDiscounts, Item $item) {
+                return $subtotalWithDiscounts + $item->subtotalWithDiscounts;
+            }, 0);
+        }
+
         if($attribute === 'discountSubtotalPercentageAmount')
         {
             $cartItems = $this->cartItems;
@@ -317,6 +325,19 @@ class Cart
     public function getSubtotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
     {
         return number_format($this->subtotal, $decimals, $decimalPoint, $thousandSeperator);
+    }
+
+    /**
+     * Get the subtotal with discounts applied formated of the items in the cart.
+     *
+     * @param   int     $decimals
+     * @param   string  $decimalPoint
+     * @param   string  $thousandSeperator
+     * @return  float
+     */
+    public function getSubtotalWithDiscounts($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    {
+        return number_format($this->subtotalWithDiscounts, $decimals, $decimalPoint, $thousandSeperator);
     }
 
     /**
