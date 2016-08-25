@@ -301,12 +301,12 @@ class Item implements Arrayable
      *
      * @param   int       $decimals
      * @param   string    $decimalPoint
-     * @param   string    $thousandSeperator
+     * @param   string    $thousandSeparator
      * @return  string
      */
-    public function getPrice($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getPrice($decimals = 2, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->price, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->price, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -314,13 +314,13 @@ class Item implements Arrayable
      *
      * @param   int       $decimals
      * @param   string    $decimalPoint
-     * @param   string    $thousandSeperator
+     * @param   string    $thousandSeparator
      * @return  array
      */
-    public function getTaxRates($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getTaxRates($decimals = 0, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return array_map(function($taxRate) use ($decimals, $decimalPoint, $thousandSeperator) {
-            return number_format($taxRate, $decimals, $decimalPoint, $thousandSeperator);
+        return array_map(function($taxRate) use ($decimals, $decimalPoint, $thousandSeparator) {
+            return number_format($taxRate, $decimals, $decimalPoint, $thousandSeparator);
         },  $this->taxRules->pluck('taxRate')->toArray());
     }
 
@@ -330,12 +330,12 @@ class Item implements Arrayable
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
+     * @param   string  $thousandSeparator
      * @return  string
      */
-    public function getSubtotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getSubtotal($decimals = 2, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->subtotal, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->subtotal, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -344,12 +344,12 @@ class Item implements Arrayable
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
+     * @param   string  $thousandSeparator
      * @return  string
      */
-    public function getSubtotalWithDiscounts($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getSubtotalWithDiscounts($decimals = 2, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->subtotalWithDiscounts, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->subtotalWithDiscounts, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -357,12 +357,12 @@ class Item implements Arrayable
      *
      * @param   int       $decimals
      * @param   string    $decimalPoint
-     * @param   string    $thousandSeperator
+     * @param   string    $thousandSeparator
      * @return  string
      */
-    public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->taxAmount, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->taxAmount, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -371,12 +371,12 @@ class Item implements Arrayable
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
+     * @param   string  $thousandSeparator
      * @return  string
      */
-    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -385,12 +385,12 @@ class Item implements Arrayable
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
+     * @param   string  $thousandSeparator
      * @return  string
      */
-    public function getTotal($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getTotal($decimals = 2, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->total, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->total, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -399,12 +399,12 @@ class Item implements Arrayable
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
+     * @param   string  $thousandSeparator
      * @return  string
      */
-    public function getTotalWithoutDiscounts($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getTotalWithoutDiscounts($decimals = 2, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->totalWithoutDiscounts, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->totalWithoutDiscounts, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -425,12 +425,12 @@ class Item implements Arrayable
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
+     * @param   string  $thousandSeparator
      * @return  string
      */
-    public function getDiscountSubtotalPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getDiscountSubtotalPercentage($decimals = 0, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->discountsSubtotalPercentage->sum('percentage'), $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discountsSubtotalPercentage->sum('percentage'), $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -438,12 +438,12 @@ class Item implements Arrayable
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
+     * @param   string  $thousandSeparator
      * @return  string
      */
-    public function getDiscountTotalPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getDiscountTotalPercentage($decimals = 0, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->discountsTotalPercentage->sum('percentage'), $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discountsTotalPercentage->sum('percentage'), $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -451,12 +451,12 @@ class Item implements Arrayable
      *
      * @param   int     $decimals
      * @param   string  $decimalPoint
-     * @param   string  $thousandSeperator
+     * @param   string  $thousandSeparator
      * @return  string
      */
-    public function getQuantity($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getQuantity($decimals = 0, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->quantity, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->quantity, $decimals, $decimalPoint, $thousandSeparator);
     }
 
 

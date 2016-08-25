@@ -92,12 +92,12 @@ class TaxRule
      *
      * @param int       $decimals
      * @param string    $decimalPoint
-     * @param string    $thousandSeperator
+     * @param string    $thousandSeparator
      * @return string
      */
-    public function getTaxRate($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getTaxRate($decimals = 0, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->taxRate, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->taxRate, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -105,12 +105,12 @@ class TaxRule
      *
      * @param int       $decimals
      * @param string    $decimalPoint
-     * @param string    $thousandSeperator
+     * @param string    $thousandSeparator
      * @return string
      */
-    public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getTaxAmount($decimals = 2, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->taxAmount, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->taxAmount, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**

@@ -128,12 +128,12 @@ class PriceRule
      *
      * @param int       $decimals
      * @param string    $decimalPoint
-     * @param string    $thousandSeperator
+     * @param string    $thousandSeparator
      * @return string
      */
-    public function getDiscountPercentage($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getDiscountPercentage($decimals = 0, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->discount->percentage, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discount->percentage, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -141,12 +141,12 @@ class PriceRule
      *
      * @param int       $decimals
      * @param string    $decimalPoint
-     * @param string    $thousandSeperator
+     * @param string    $thousandSeparator
      * @return string
      */
-    public function getDiscountFixed($decimals = 0, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getDiscountFixed($decimals = 0, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->discount->fixed, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discount->fixed, $decimals, $decimalPoint, $thousandSeparator);
     }
 
     /**
@@ -154,11 +154,11 @@ class PriceRule
      *
      * @param int       $decimals
      * @param string    $decimalPoint
-     * @param string    $thousandSeperator
+     * @param string    $thousandSeparator
      * @return string
      */
-    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeperator = '.')
+    public function getDiscountAmount($decimals = 2, $decimalPoint = ',', $thousandSeparator = '.')
     {
-        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeperator);
+        return number_format($this->discountAmount, $decimals, $decimalPoint, $thousandSeparator);
     }
 }
