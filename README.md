@@ -1,4 +1,4 @@
-# Advanced ShoppingCart to Laravel 5.2
+# Advanced ShoppingCart to Laravel 5.3
 
 [![Total Downloads](https://poser.pugx.org/syscover/shopping-cart/downloads)](https://packagist.org/packages/syscover/shopping-cart)
 
@@ -6,7 +6,7 @@
 
 **1 - After install Laravel framework, insert on file composer.json, inside require object this value**
 ```
-"syscover/shopping-cart": "~1.0"
+"syscover/shopping-cart": "~2.0"
 ```
 and execute on console:
 ```
