@@ -166,7 +166,7 @@ class Item implements Arrayable
 
         $this->id               = $id;
         $this->name             = $name;
-        $this->inputPrice        = floatval($inputPrice);
+        $this->inputPrice       = floatval($inputPrice);
         $this->transportable    = $transportable;
         $this->weight           = floatval($weight);
         $this->options          = new Options($options);
@@ -253,12 +253,17 @@ class Item implements Arrayable
             return $this->taxRules->sum('taxAmount');
         }
 
+        // get price for item, can to be with or without tax depend of configuration
         if($attribute === 'price')
         {
             if(config('shoppingCart.taxProductDisplayPrices') == Cart::PRICE_WITHOUT_TAX)
+            {
                 return $this->unitPrice;
+            }
             elseif(config('shoppingCart.taxProductDisplayPrices') == Cart::PRICE_WITH_TAX)
+            {
                 return $this->calculateUnitPriceWithTax($this->unitPrice);
+            }
         }
 
         if($attribute === 'quantity')
@@ -799,7 +804,7 @@ class Item implements Arrayable
     }
 
     /**
-     * Calculate unit price with tax, does not account discounts.
+     * Calculate unit price with tax, doesn't account discounts.
      * it is to calculate the result of the function getPrice if display prices are with tax
      *
      * @param   float   $unitPrice
