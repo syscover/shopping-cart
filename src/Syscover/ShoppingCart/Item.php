@@ -585,7 +585,10 @@ class Item implements Arrayable
     {
         // subtotal calculate
         // PRICE WITHOUT TAX
-        if(($mode == Cart::PRICE_WITHOUT_TAX) || ($mode == null && config('shoppingCart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX || $this->taxRules === null || $this->taxRules->count() == 0))
+        if(
+            ($mode == Cart::PRICE_WITHOUT_TAX) ||
+            ($mode == null && config('shoppingCart.taxProductPrices') == Cart::PRICE_WITHOUT_TAX || $this->taxRules === null || $this->taxRules->count() == 0)
+        )
         {
             if(! isset($this->unitPrice))
                 $this->unitPrice = $this->inputPrice;
@@ -617,7 +620,10 @@ class Item implements Arrayable
         }
 
         // PRICE WITH TAX
-        elseif(($mode == Cart::PRICE_WITH_TAX) || ($mode == null && config('shoppingCart.taxProductPrices') == Cart::PRICE_WITH_TAX))
+        elseif(
+            ($mode == Cart::PRICE_WITH_TAX) ||
+            ($mode == null && config('shoppingCart.taxProductPrices') == Cart::PRICE_WITH_TAX)
+        )
         {
             // total calculate
             $this->total = $this->quantity * $this->inputPrice;
@@ -853,6 +859,7 @@ class Item implements Arrayable
                 $lastPriority       = $taxRule->priority;
                 $priceAuxWithTax    -= $taxAmount; // attention, reset tax amounts before sum
             }
+
             $taxAmount += ($priceAuxWithTax * $taxRule->taxRate) / ($taxRule->taxRate + 100);
         }
 
